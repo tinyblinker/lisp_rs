@@ -1,4 +1,5 @@
 pub mod lexer;
+mod parser;
 
 #[derive(Clone, Debug, PartialEq)]
 enum LispExp {
@@ -70,5 +71,18 @@ mod test {
     #[test]
     fn test_tokenize_parens() {
         assert_eq!(tokenize("(+ 1 2)"), ["(", "+", "1", "2", ")"])
+    }
+    #[test]
+    fn test_tokenize_comments() {
+        assert_eq!(
+            tokenize("(+ 1 5);this is my comment"),
+            ["(", "+", "1", "5", ")"]
+        )
+    }
+    #[test]
+    fn test_parse_symbols(){
+        let tokens = vec!["+".to_string()];
+        let (exp, _) = parse(&tokens).unwrap();
+        assert_eq!(exp,LispExp::Symbol("+".into()));
     }
 }
