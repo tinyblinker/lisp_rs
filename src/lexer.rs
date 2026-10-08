@@ -1,3 +1,4 @@
+/// tokenize() is the "Lexer"
 /// break src strs into tokens
 pub fn tokenize(input: &str) -> Vec<String> {
     let without_comments = input
