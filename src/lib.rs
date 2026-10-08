@@ -73,6 +73,11 @@ mod tests {
     fn test_tokenize_whitespace() {
         assert_eq!(tokenize(" +   1     2"), ["+", "1", "2"])
     }
+
+    #[test]
+    fn test_tokenize_parentheses() {
+        assert_eq!(tokenize("(+ 1 2)"), ["(", "+", "1", "2", ")"])
+    }
 }
 
 #[allow(dead_code)]
