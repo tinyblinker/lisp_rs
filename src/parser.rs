@@ -9,7 +9,10 @@ use crate::{LispErr, LispExp};
 
 #[allow(dead_code)]
 pub fn parse(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
-    let (token, rest) = tokens.split_first().unwrap();
+    let (token, rest) = tokens
+        .split_first()
+        .ok_or(LispErr::Reason("no tokens to parse".to_string()))
+        .unwrap();
     Ok((parse_atom(token), rest))
 }
 
