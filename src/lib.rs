@@ -5,9 +5,10 @@ pub mod parser;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispExp {
-    Number(f64),    // number type
-    String(String), // str type
-    Symbol(String), // for symbol
+    Number(f64),        // number type
+    String(String),     // str type
+    Symbol(String),     // for symbol
+    List(Vec<LispExp>), // imply nested list
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -96,6 +97,14 @@ mod tests {
     fn test_eval_str_source_code() {
         let result = eval_str("+");
         assert_eq!(result, eval(&LispExp::Symbol("+".into())));
+    }
+
+    #[test]
+    fn test_recursive_parser() {
+        assert_eq!(
+            parse("(+ 1 (* 2 3))").unwrap(),
+            LispExp::List(vec!["+", "1", "*", "2", "3"])
+        );
     }
 }
 
