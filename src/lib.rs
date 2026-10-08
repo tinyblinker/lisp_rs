@@ -33,6 +33,14 @@ mod tests {
         assert_eq!(LispExp::Number(36f64), eval_str(&exp_1).unwrap());
         assert_eq!(LispExp::Number(78f64), eval_str(&exp_2).unwrap());
     }
+
+    #[test]
+    fn test_eval_negative_num_in_str() {
+        let exp_1 = LispExp::Str(" -36 ".to_string());
+        let exp_2 = LispExp::Str("-78".to_string());
+        assert_eq!(LispExp::Number(-36f64), eval_str(&exp_1).unwrap());
+        assert_eq!(LispExp::Number(-78f64), eval_str(&exp_2).unwrap());
+    }
 }
 
 #[allow(dead_code)]
