@@ -1,3 +1,5 @@
+pub mod lexer;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispExp {
     Number(f64), // number type
@@ -11,6 +13,8 @@ pub enum LispErr {
 
 #[cfg(test)]
 mod tests {
+    use crate::lexer::tokenize;
+
     use super::*;
 
     #[test]
@@ -49,9 +53,20 @@ mod tests {
         let exp_2 = LispExp::Str("false".to_string());
         let exp_2_p = LispExp::Str("false ".to_string());
         assert_eq!(LispExp::Str("true".to_string()), eval_str(&exp_1).unwrap());
-        assert_eq!(LispExp::Str("true".to_string()), eval_str(&exp_1_p).unwrap());
+        assert_eq!(
+            LispExp::Str("true".to_string()),
+            eval_str(&exp_1_p).unwrap()
+        );
         assert_eq!(LispExp::Str("false".to_string()), eval_str(&exp_2).unwrap());
-        assert_eq!(LispExp::Str("false".to_string()), eval_str(&exp_2_p).unwrap());
+        assert_eq!(
+            LispExp::Str("false".to_string()),
+            eval_str(&exp_2_p).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_tokenize_multi() {
+        assert_eq!(tokenize("+ 1 2"), ["+", "1", "2"])
     }
 }
 
