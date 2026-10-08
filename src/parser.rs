@@ -10,5 +10,15 @@ use crate::{LispErr, LispExp};
 #[allow(dead_code)]
 pub fn parse(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
     let (token, rest) = tokens.split_first().unwrap();
-    Ok((LispExp::Symbol(token.to_string()), rest))
+    Ok((parse_atom(token), rest))
+}
+
+/// parse the token(num or symbol)
+#[allow(dead_code)]
+pub fn parse_atom(token: &str) -> LispExp {
+    if let Ok(num) = token.parse::<f64>() {
+        LispExp::Number(num)
+    } else {
+        LispExp::Symbol(token.into())
+    }
 }

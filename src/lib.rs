@@ -96,10 +96,17 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_symbol() {
+    fn test_parse_symbol_atom() {
         let tokens = vec!["+".to_string()];
         let (exp, _) = parse(&tokens).unwrap();
         assert_eq!(exp, LispExp::Symbol("+".into()));
+    }
+
+    #[test]
+    fn test_parse_number_atom() {
+        let tokens = vec!["32".to_string()];
+        let (exp, _) = parse(&tokens).unwrap();
+        assert_eq!(exp, LispExp::Number(32f64));
     }
 }
 
