@@ -1,9 +1,11 @@
 pub mod lexer;
+pub mod parser;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispExp {
-    Number(f64), // number type
-    Str(String), // str type
+    Number(f64),    // number type
+    String(String), // str type
+    Symbol(String), // for symbol
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -13,7 +15,7 @@ pub enum LispErr {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::tokenize;
+    use crate::{lexer::tokenize, parser::parse};
 
     use super::*;
 
@@ -32,34 +34,40 @@ mod tests {
 
     #[test]
     fn test_eval_num_in_str() {
-        let exp_1 = LispExp::Str(" 36 ".to_string());
-        let exp_2 = LispExp::Str("78".to_string());
+        let exp_1 = LispExp::String(" 36 ".to_string());
+        let exp_2 = LispExp::String("78".to_string());
         assert_eq!(LispExp::Number(36f64), eval_str(&exp_1).unwrap());
         assert_eq!(LispExp::Number(78f64), eval_str(&exp_2).unwrap());
     }
 
     #[test]
     fn test_eval_negative_num_in_str() {
-        let exp_1 = LispExp::Str(" -36 ".to_string());
-        let exp_2 = LispExp::Str("-78".to_string());
+        let exp_1 = LispExp::String(" -36 ".to_string());
+        let exp_2 = LispExp::String("-78".to_string());
         assert_eq!(LispExp::Number(-36f64), eval_str(&exp_1).unwrap());
         assert_eq!(LispExp::Number(-78f64), eval_str(&exp_2).unwrap());
     }
 
     #[test]
     fn test_eval_fake_bool_str() {
-        let exp_1 = LispExp::Str("true".to_string());
-        let exp_1_p = LispExp::Str(" true ".to_string());
-        let exp_2 = LispExp::Str("false".to_string());
-        let exp_2_p = LispExp::Str("false ".to_string());
-        assert_eq!(LispExp::Str("true".to_string()), eval_str(&exp_1).unwrap());
+        let exp_1 = LispExp::String("true".to_string());
+        let exp_1_p = LispExp::String(" true ".to_string());
+        let exp_2 = LispExp::String("false".to_string());
+        let exp_2_p = LispExp::String("false ".to_string());
         assert_eq!(
-            LispExp::Str("true".to_string()),
+            LispExp::String("true".to_string()),
+            eval_str(&exp_1).unwrap()
+        );
+        assert_eq!(
+            LispExp::String("true".to_string()),
             eval_str(&exp_1_p).unwrap()
         );
-        assert_eq!(LispExp::Str("false".to_string()), eval_str(&exp_2).unwrap());
         assert_eq!(
-            LispExp::Str("false".to_string()),
+            LispExp::String("false".to_string()),
+            eval_str(&exp_2).unwrap()
+        );
+        assert_eq!(
+            LispExp::String("false".to_string()),
             eval_str(&exp_2_p).unwrap()
         );
     }
@@ -86,6 +94,13 @@ mod tests {
             ["(", "+", "1", "2", ")"]
         );
     }
+
+    #[test]
+    fn test_parse_symbol() {
+        let tokens = vec!["+".to_string()];
+        let (exp, _) = parse(&tokens).unwrap();
+        assert_eq!(exp, LispExp::Symbol("+".into()));
+    }
 }
 
 #[allow(dead_code)]
@@ -99,9 +114,9 @@ fn eval(exp: &LispExp) -> Result<LispExp, LispErr> {
 #[allow(dead_code)]
 fn eval_str(exp: &LispExp) -> Result<LispExp, LispErr> {
     match exp {
-        LispExp::Str(x) => {
+        LispExp::String(x) => {
             match x.trim() {
-                "true" | "false" => return Ok(LispExp::Str(x.trim().to_string())),
+                "true" | "false" => return Ok(LispExp::String(x.trim().to_string())),
                 _ => {}
             }
             let result: f64 = x
