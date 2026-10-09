@@ -151,6 +151,11 @@ mod tests {
     fn test_unclosed_list_error() {
         assert!(parse(&["(".to_string(), "+".into(), "1".into()]).is_err());
     }
+
+    #[test]
+    fn test_unexpected_closed_list_error() {
+        assert!(parse(&[")".to_string()]).is_err());
+    }
 }
 
 /// eval() is the "Evaluator"
