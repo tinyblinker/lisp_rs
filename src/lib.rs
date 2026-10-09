@@ -146,6 +146,11 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn test_unclosed_list_error() {
+        assert!(parse(&["(".to_string(), "+".into(), "1".into()]).is_err());
+    }
 }
 
 /// eval() is the "Evaluator"
