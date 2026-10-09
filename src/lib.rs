@@ -125,8 +125,20 @@ mod tests {
 
     #[test]
     fn test_recursive_parser() {
+        let tokens = [
+            "(".to_string(),
+            "+".into(),
+            "1".into(),
+            "(".into(),
+            "*".into(),
+            "2".into(),
+            "3".into(),
+            ")".into(),
+            ")".into(),
+        ];
+        let (result, _) = parse(&tokens).unwrap();
         assert_eq!(
-            eval_str("(+ 1 (* 2 3))").unwrap(),
+            result,
             list!(vec![
                 symbol!("+"),
                 number!(1f64),
