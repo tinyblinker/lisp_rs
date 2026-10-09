@@ -3,38 +3,36 @@ use crate::{LispErr, LispExp};
 /// parse() is the "Parser"'s main
 #[allow(dead_code)]
 pub fn parse(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
+    // get just the first token
     let (token, rest_tokens) = tokens
         .split_first()
-        .ok_or(LispErr::Reason("parse(): no tokens to parse".to_string()))?;
+        .ok_or(LispErr::Reason("parse():No token left".into()))?;
 
-    // as_str(): String->&str(borrow)
+    // match the first "token"
     match token.as_str() {
-        "(" => read_seq(rest_tokens), // left parentheses->start to read the list
-        ")" => Err(LispErr::Reason("Extra \')\'".to_string())),
+        "(" => read_seq(rest_tokens),
+        ")" => Err(LispErr::Reason("Extra \')\'".into())),
         _ => Ok((parse_atom(token), rest_tokens)),
     }
 }
 
 /// Read a list: start after the left parenthesis, end when encountering )
 fn read_seq(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
-    let mut elements = Vec::<LispExp>::new(); // empty list
-    let mut remaining = tokens; // remaining tokens
+    // create a Vector for holding the list_elements
+    let mut list_elements: Vec<LispExp> = Vec::new();
+    let mut tokens_left = tokens;
 
-    // keep looping until encounter ")"
     loop {
-        let (token, rest_tokens) = remaining
+        let (token, rest_tokens_a) = tokens_left
             .split_first()
             .ok_or(LispErr::Reason("Missing \')\'".to_string()))?;
-        if token == ")"{
-            // encounter ")" -> list ends, return all collected elements
-            return Ok((LispExp::List(elements),rest_tokens))
+        // if encounter the ')' then return the list and the rest_tokens immediately
+        if token == ")" {
+            return Ok((LispExp::List(list_elements), rest_tokens_a));
         }
-
-        // Recursive: call parse to parse the next element
-        // (this element itself might be a list)
-        let (exp, new_rest_tokens) = parse(remaining)?;
-        elements.push(exp);  // add to list
-        remaining = new_rest_tokens;  // update the remaining tokens
+        let (exp, rest_tokens_b) = parse(tokens_left)?;
+        list_elements.push(exp);
+        tokens_left = rest_tokens_b;
     }
 }
 

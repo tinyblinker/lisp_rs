@@ -11,6 +11,30 @@ pub enum LispExp {
     List(Vec<LispExp>), // imply nested list
 }
 
+#[macro_export]
+#[allow(unused_macros)]
+macro_rules! symbol {
+    ($name:literal) => {
+        LispExp::Symbol($name.into())
+    };
+}
+
+#[macro_export]
+#[allow(unused_macros)]
+macro_rules! number {
+    ($name:literal) => {
+        LispExp::Number($name.into())
+    };
+}
+
+#[macro_export]
+#[allow(unused_macros)]
+macro_rules! list {
+    ($name:expr) => {
+        LispExp::List($name.into())
+    };
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispErr {
     Reason(String), // error message
@@ -102,8 +126,12 @@ mod tests {
     #[test]
     fn test_recursive_parser() {
         assert_eq!(
-            parse("(+ 1 (* 2 3))").unwrap(),
-            LispExp::List(vec!["+", "1", "*", "2", "3"])
+            eval_str("(+ 1 (* 2 3))").unwrap(),
+            list!(vec![
+                symbol!("+"),
+                number!(1f64),
+                list!(vec![symbol!("*"), number!(2f64), number!(3f64)])
+            ])
         );
     }
 }
@@ -111,8 +139,9 @@ mod tests {
 /// eval() is the "Evaluator"
 #[allow(dead_code)]
 fn eval(exp: &LispExp) -> Result<LispExp, LispErr> {
-    match *exp {
-        LispExp::Number(x) => Ok(LispExp::Number(x)),
+    match exp {
+        LispExp::Number(x) => Ok(LispExp::Number(*x)),
+        LispExp::List(x) => Ok(LispExp::List(x.to_vec())),
         _ => Err(LispErr::Reason("Unsupport in eval()".to_string())),
     }
 }
