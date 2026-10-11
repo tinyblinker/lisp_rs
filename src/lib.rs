@@ -43,7 +43,10 @@ pub enum LispErr {
 #[cfg(test)]
 mod tests {
 
-    use crate::{lexer::tokenize, parser::parse};
+    use crate::{
+        lexer::tokenize,
+        parser::{parse, parse_atom},
+    };
 
     use super::*;
 
@@ -155,6 +158,12 @@ mod tests {
     #[test]
     fn test_unexpected_closed_list_error() {
         assert!(parse(&[")".to_string()]).is_err());
+    }
+
+    #[test]
+    fn test_parse_atom_custom_symbols() {
+        assert_eq!(parse_atom("#t"), symbol!("#t"));
+        assert_eq!(parse_atom("#f"), symbol!("#f"));
     }
 }
 

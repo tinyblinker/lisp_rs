@@ -38,7 +38,12 @@ fn read_seq(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
 
 /// parse_atom() is a part of the "Parser"
 /// parse the atom(num or symbol)
-fn parse_atom(token: &str) -> LispExp {
+pub fn parse_atom(token: &str) -> LispExp {
+    if token == "#t" {
+        return LispExp::Symbol("#t".to_string());
+    } else if token == "#f" {
+        return LispExp::Symbol("#f".to_string());
+    }
     if let Ok(num) = token.parse::<f64>() {
         LispExp::Number(num)
     } else {
