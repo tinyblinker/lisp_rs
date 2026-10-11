@@ -152,10 +152,10 @@ mod tests {
 
     #[test]
     fn test_unclosed_list_error() {
-        assert!(matches!(
+        assert_eq!(
             parse(&["(".to_string(), "+".into(), "1".into()]),
-            Err(LispErr::Reason(reason)) if reason == "Missing \')\'"
-        ));
+            Err(LispErr::Reason("Missing \')\'".to_string()))
+        );
     }
 
     #[test]
