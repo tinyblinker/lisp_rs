@@ -4,12 +4,14 @@ pub mod env;
 pub mod lexer;
 pub mod parser;
 
+#[allow(unpredictable_function_pointer_comparisons)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispExp {
-    Number(f64),        // number type
-    String(String),     // str type
-    Symbol(String),     // for symbol
-    List(Vec<LispExp>), // imply nested list
+    Number(f64),                                      // number type
+    String(String),                                   // str type
+    Symbol(String),                                   // for symbol
+    List(Vec<LispExp>),                               // imply nested list
+    Func(fn(&[LispExp]) -> Result<LispExp, LispErr>), // function type
 }
 
 #[macro_export]
@@ -228,6 +230,7 @@ fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
     match exp {
         LispExp::Number(x) => Ok(LispExp::Number(*x)),
         LispExp::Symbol(x) => env.get(x),
+        LispExp::Func(_) => Ok(exp.clone()), // function itself is a value
         _ => Err(LispErr::Reason(
             "eval(): This type is not support yet".to_string(),
         )),
