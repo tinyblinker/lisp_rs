@@ -1,5 +1,6 @@
 use crate::{lexer::tokenize, parser::parse};
 
+pub mod env;
 pub mod lexer;
 pub mod parser;
 
@@ -44,6 +45,7 @@ pub enum LispErr {
 mod tests {
 
     use crate::{
+        env::LispEnv,
         lexer::tokenize,
         parser::{parse, parse_atom},
     };
@@ -178,6 +180,14 @@ mod tests {
             eval_str("(+ 1 2"),
             Err(LispErr::Reason("Missing \')\'".to_string()))
         );
+    }
+
+    /// hint: maybe just write the test first, just let test drive you to develop(TDD)
+    #[test]
+    fn test_lispenv_set_get() {
+        let mut env = LispEnv::new();
+        env.set("a".into(), number!(100f32));
+        assert_eq!(env.get("a").unwrap(), number!(100f32));
     }
 }
 
