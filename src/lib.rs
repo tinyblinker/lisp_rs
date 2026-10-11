@@ -1,4 +1,4 @@
-use crate::{lexer::tokenize, parser::parse};
+use crate::{env::LispEnv, lexer::tokenize, parser::parse};
 
 pub mod env;
 pub mod lexer;
@@ -60,29 +60,45 @@ mod tests {
 
     #[test]
     fn test_eval_number() {
+        let env = LispEnv::new();
         let exp = LispExp::Number(88.0);
-        let result = eval(&exp).unwrap(); // eval() is essential,TDD to develop it
+        let result = eval(&exp, &env).unwrap(); // eval() is essential,TDD to develop it
         assert_eq!(result, LispExp::Number(88.0));
     }
 
     #[test]
     fn test_eval_num_in_str() {
-        assert_eq!(LispExp::Number(36f64), eval_str(" 36 ").unwrap());
-        assert_eq!(LispExp::Number(78f64), eval_str("78").unwrap());
+        let env = LispEnv::new();
+        assert_eq!(LispExp::Number(36f64), eval_str(" 36 ", &env).unwrap());
+        assert_eq!(LispExp::Number(78f64), eval_str("78", &env).unwrap());
     }
 
     #[test]
     fn test_eval_negative_num_in_str() {
-        assert_eq!(LispExp::Number(-36f64), eval_str(" -36 ").unwrap());
-        assert_eq!(LispExp::Number(-78f64), eval_str("-78").unwrap());
+        let env = LispEnv::new();
+        assert_eq!(LispExp::Number(-36f64), eval_str(" -36 ", &env).unwrap());
+        assert_eq!(LispExp::Number(-78f64), eval_str("-78", &env).unwrap());
     }
 
     #[test]
     fn test_eval_fake_bool_str() {
-        assert_eq!(eval(&LispExp::String("true".into())), eval_str("true"));
-        assert_eq!(eval(&LispExp::String("true".into())), eval_str("  true "));
-        assert_eq!(eval(&LispExp::String("false".into())), eval_str("false"));
-        assert_eq!(eval(&LispExp::String("false".into())), eval_str("  false "));
+        let env = LispEnv::new();
+        assert_eq!(
+            eval(&LispExp::String("true".into()), &env),
+            eval_str("true", &env)
+        );
+        assert_eq!(
+            eval(&LispExp::String("true".into()), &env),
+            eval_str("  true ", &env)
+        );
+        assert_eq!(
+            eval(&LispExp::String("false".into()), &env),
+            eval_str("false", &env)
+        );
+        assert_eq!(
+            eval(&LispExp::String("false".into()), &env),
+            eval_str("  false ", &env)
+        );
     }
 
     #[test]
@@ -124,8 +140,9 @@ mod tests {
 
     #[test]
     fn test_eval_str_source_code() {
-        let result = eval_str("+");
-        assert_eq!(result, eval(&LispExp::Symbol("+".into())));
+        let env = LispEnv::new();
+        let result = eval_str("+", &env);
+        assert_eq!(result, eval(&LispExp::Symbol("+".into()), &env));
     }
 
     #[test]
@@ -176,8 +193,9 @@ mod tests {
 
     #[test]
     fn test_error_missing_parenthese() {
+        let env = LispEnv::new();
         assert_eq!(
-            eval_str("(+ 1 2"),
+            eval_str("(+ 1 2", &env),
             Err(LispErr::Reason("Missing \')\'".to_string()))
         );
     }
@@ -199,26 +217,35 @@ mod tests {
             Err(LispErr::Reason(format!("Undefined variable: {}", var)))
         )
     }
+
+    #[test]
+    fn test_eval_symbol() {
+        let mut env = LispEnv::new();
+        env.set("x".into(), number!(42f64));
+        assert_eq!(eval_str("x", &env).unwrap(), number!(42f64));
+    }
 }
 
 /// eval() is the "Evaluator"
 #[allow(dead_code)]
-fn eval(exp: &LispExp) -> Result<LispExp, LispErr> {
+fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
     match exp {
         LispExp::Number(x) => Ok(LispExp::Number(*x)),
-        LispExp::List(x) => Ok(LispExp::List(x.to_vec())),
-        _ => Err(LispErr::Reason("Unsupport in eval()".to_string())),
+        LispExp::Symbol(x) => env.get(x),
+        _ => Err(LispErr::Reason(
+            "eval(): This type is not support yet".to_string(),
+        )),
     }
 }
 
 /// eval_str() is the pipeline
 /// source_code-->Lexer(tokenize())->[tokens]->Parser(parse())->[AST]->Evaluator(eval())-->Value
 #[allow(dead_code)]
-fn eval_str(source: &str) -> Result<LispExp, LispErr> {
+fn eval_str(source: &str, env: &LispEnv) -> Result<LispExp, LispErr> {
     // "Lexer" to tokenize the source code to tokens
     let tokens = tokenize(source);
     // "Parser" to parse the tokens to AST
     let (exp, _) = parse(&tokens)?;
     // "Evaluator" to eval the AST
-    eval(&exp)
+    eval(&exp, env)
 }
