@@ -160,7 +160,10 @@ mod tests {
 
     #[test]
     fn test_unexpected_closed_list_error() {
-        assert!(parse(&[")".to_string()]).is_err());
+        assert_eq!(
+            parse(&[")".to_string()]),
+            Err(LispErr::Reason("Extra \')\'".to_string()))
+        );
     }
 
     #[test]
