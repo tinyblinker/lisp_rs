@@ -165,6 +165,13 @@ mod tests {
         assert_eq!(parse_atom("#t"), symbol!("#t"));
         assert_eq!(parse_atom("#f"), symbol!("#f"));
     }
+
+    #[test]
+    fn test_error_missing_parenthese() {
+        assert!(
+            matches!(eval_str("(+ 1 2"), Err(LispErr::Reason(reason)) if reason == "Missing \')\'")
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
