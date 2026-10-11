@@ -8,7 +8,6 @@ pub mod parser;
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispExp {
     Number(f64),                                      // number type
-    String(String),                                   // str type
     Symbol(String),                                   // for symbol
     List(Vec<LispExp>),                               // imply nested list
     Func(fn(&[LispExp]) -> Result<LispExp, LispErr>), // function type
