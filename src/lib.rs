@@ -189,6 +189,16 @@ mod tests {
         env.set("a".into(), number!(100f32));
         assert_eq!(env.get("a").unwrap(), number!(100f32));
     }
+
+    #[test]
+    fn test_lispenv_undefined_error() {
+        let env = LispEnv::new();
+        let var = "a";
+        assert_eq!(
+            env.get(var),
+            Err(LispErr::Reason(format!("Undefined variable: {}", var)))
+        )
+    }
 }
 
 /// eval() is the "Evaluator"
