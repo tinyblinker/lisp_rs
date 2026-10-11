@@ -203,6 +203,13 @@ mod tests {
         env.set("x".into(), number!(42f64));
         assert_eq!(eval_str("x", &env).unwrap(), number!(42f64));
     }
+
+    #[test]
+    fn test_set_get_pi() {
+        let mut env = LispEnv::new();
+        env.set("pi".into(), number!(3.14159));
+        assert_eq!(eval_str("pi", &env).unwrap(), number!(3.14159))
+    }
 }
 
 /// eval() is the "Evaluator"
