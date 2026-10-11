@@ -24,7 +24,7 @@ macro_rules! symbol {
 #[macro_export]
 #[allow(unused_macros)]
 macro_rules! number {
-    ($name:literal) => {
+    ($name:expr) => {
         LispExp::Number($name.into())
     };
 }
@@ -40,6 +40,27 @@ macro_rules! list {
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispErr {
     Reason(String), // error message
+}
+
+pub fn create_default_env() -> LispEnv {
+    let mut env = LispEnv::new();
+    env.set(
+        "+".into(),
+        LispExp::Func(|args| {
+            let sum: f64 = args
+                .iter()
+                .filter_map(|arg| {
+                    if let LispExp::Number(n) = arg {
+                        Some(*n)
+                    } else {
+                        None
+                    }
+                })
+                .sum();
+            Ok(number!(sum))
+        }),
+    );
+    env
 }
 
 #[cfg(test)]
@@ -221,6 +242,12 @@ mod tests {
         env.set("a".into(), number!(2));
         assert_eq!(env.get("a").unwrap(), number!(2));
     }
+
+    #[test]
+    fn test_eval_addition() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(+ 1 2)", &env).unwrap(), number!(3));
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -228,11 +255,20 @@ mod tests {
 fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
     match exp {
         LispExp::Number(x) => Ok(LispExp::Number(*x)),
-        LispExp::Symbol(x) => env.get(x),
+        LispExp::Symbol(x) => env.get(x), // symbol->look up in "env"
         LispExp::Func(_) => Ok(exp.clone()), // function itself is a value
-        _ => Err(LispErr::Reason(
-            "eval(): This type is not support yet".to_string(),
-        )),
+        LispExp::List(elements) => {
+            if elements.is_empty() {
+                return Ok(LispExp::List(vec![]));
+            } // empty list
+            let func = eval(&elements[0], &env)?; // eval the first ATOM to get the function
+            let args: Result<Vec<LispExp>, LispErr> =
+                elements[1..].iter().map(|arg| eval(arg, &env)).collect();
+            match func {
+                LispExp::Func(f) => f(&(args?)),
+                _ => Err(LispErr::Reason("Not a function".to_string())),
+            }
+        }
     }
 }
 
