@@ -210,6 +210,16 @@ mod tests {
         env.set("pi".into(), number!(3.14159));
         assert_eq!(eval_str("pi", &env).unwrap(), number!(3.14159))
     }
+
+    /// the same key set multiple times will let the last one to overwrite
+    /// the first one
+    #[test]
+    fn test_set_a_key_twice() {
+        let mut env = LispEnv::new();
+        env.set("a".into(), number!(3));
+        env.set("a".into(), number!(2));
+        assert_eq!(env.get("a").unwrap(), number!(2));
+    }
 }
 
 /// eval() is the "Evaluator"
