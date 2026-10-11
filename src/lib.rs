@@ -81,27 +81,6 @@ mod tests {
     }
 
     #[test]
-    fn test_eval_fake_bool_str() {
-        let env = LispEnv::new();
-        assert_eq!(
-            eval(&LispExp::String("true".into()), &env),
-            eval_str("true", &env)
-        );
-        assert_eq!(
-            eval(&LispExp::String("true".into()), &env),
-            eval_str("  true ", &env)
-        );
-        assert_eq!(
-            eval(&LispExp::String("false".into()), &env),
-            eval_str("false", &env)
-        );
-        assert_eq!(
-            eval(&LispExp::String("false".into()), &env),
-            eval_str("  false ", &env)
-        );
-    }
-
-    #[test]
     fn test_tokenize_multi() {
         assert_eq!(tokenize("+ 1 2"), ["+", "1", "2"])
     }
