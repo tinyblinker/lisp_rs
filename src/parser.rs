@@ -36,19 +36,49 @@ fn read_seq(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
     }
 }
 
+fn is_valid_string(s: &str) -> Result<(), LispErr> {
+    let mut chars = s.chars();
+    if chars.next() != Some('"') {
+        return Err(LispErr::Reason(
+            "parse_atom(): the String token must start with \'\"\'".to_string(),
+        ));
+    }
+    // check 'esc' and 'closed' status
+    let (esc, closed) = chars.try_fold((false, false), |(esc, closed), ch| match (esc, ch) {
+        (true, _) => Ok((false, false)),
+        (_, '\\') => Ok((true, false)),
+        (_, '"') => Ok((false, true)),
+        (_, '\'') => Err(LispErr::Reason(
+            "parse_atom(): the String token must use \'\\\' to esc".to_string(),
+        )),
+        _ => Ok((false, false)),
+    })?;
+
+    if esc || !closed {
+        return Err(LispErr::Reason(
+            "parse_atom(): the String token has a syntax error".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 /// parse_atom() is a part of the "Parser"
 /// parse the atom(num or symbol)
 pub fn parse_atom(token: &str) -> LispExp {
     if token == "#t" {
-        return LispExp::Bool(true);
+        LispExp::Bool(true)
     } else if token == "#f" {
-        return LispExp::Bool(false);
+        LispExp::Bool(false)
     } else if token == "nil" {
-        return LispExp::Nil;
-    }
-    if let Ok(num) = token.parse::<f64>() {
+        LispExp::Nil
+    } else if let Ok(num) = token.parse::<f64>() {
         LispExp::Number(num)
     } else {
-        LispExp::Symbol(token.into())
+        // we need to classify String & Symbol here
+        if is_valid_string(token.into()).is_ok() {
+            LispExp::String(token[1..(token.len() - 1)].into())
+        } else {
+            LispExp::Symbol(token.into())
+        }
     }
 }

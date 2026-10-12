@@ -216,6 +216,19 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "string-length" function
+    env.set(
+        "string-length".into(),
+        LispExp::Func(|args| {
+            if let LispExp::String(str) = &args[0] {
+                Ok(LispExp::Number(str.len() as f64))
+            } else {
+                Err(LispErr::Reason(
+                    "\'string-length function\' needs a \'String\'".to_string(),
+                ))
+            }
+        }),
+    );
     env
 }
 
@@ -502,6 +515,15 @@ mod tests {
         assert_eq!(
             eval_str("\"hello_lisp\"", &env).unwrap(),
             string!("hello_lisp")
+        );
+    }
+
+    #[test]
+    fn test_eval_string_length() {
+        let env = create_default_env();
+        assert_eq!(
+            eval_str("(string-length \"abcd\")", &env).unwrap(),
+            number!(4f64)
         );
     }
 }
