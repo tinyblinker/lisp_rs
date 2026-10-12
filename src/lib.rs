@@ -44,6 +44,7 @@ pub enum LispErr {
 
 pub fn create_default_env() -> LispEnv {
     let mut env = LispEnv::new();
+    // set "+" function
     env.set(
         "+".into(),
         LispExp::Func(|args| {
@@ -58,6 +59,60 @@ pub fn create_default_env() -> LispEnv {
                 })
                 .sum();
             Ok(number!(sum))
+        }),
+    );
+    // set "-" function
+    env.set(
+        "-".into(),
+        LispExp::Func(|args| {
+            let nums: Vec<f64> = args
+                .iter()
+                .filter_map(|arg| {
+                    if let LispExp::Number(n) = arg {
+                        Some(*n)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if nums.len() == 1 {
+                Ok(number!(-nums[0]))
+            } else {
+                Ok(number!(nums[0] - nums[1..].iter().sum::<f64>()))
+            }
+        }),
+    );
+    // set "*" function
+    env.set(
+        "*".into(),
+        LispExp::Func(|args| {
+            let result: f64 = args.iter().fold(1.0f64, |acc, arg| match arg {
+                LispExp::Number(num) => num * acc,
+                _ => acc,
+            });
+            Ok(number!(result))
+        }),
+    );
+    // set "/" function
+    env.set(
+        "/".into(),
+        LispExp::Func(|args| {
+            let nums: Vec<f64> = args
+                .iter()
+                .filter_map(|arg| {
+                    if let LispExp::Number(num) = arg {
+                        Some(*num)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if nums.len() == 1 {
+                Ok(number!(1f64 / nums[0]))
+            } else {
+                let result: f64 = nums[1..].iter().fold(nums[0], |acc, num| acc / num);
+                Ok(number!(result))
+            }
         }),
     );
     env
