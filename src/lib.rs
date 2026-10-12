@@ -380,6 +380,14 @@ mod tests {
         let env = create_default_env();
         assert_eq!(eval_str("(+ 1 2 3 4 5)", &env).unwrap(), number!(15f64));
     }
+
+    #[test]
+    fn eval_more_complex_arithmetic() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(+ 1 2 3)", &env).unwrap(), number!(6f64));
+        assert_eq!(eval_str("(+ (+ 1 2) 3)", &env).unwrap(), number!(6f64));
+        assert_eq!(eval_str("(- 10 5 2)", &env).unwrap(), number!(3f64));
+    }
 }
 
 /// eval() is the "Evaluator"
