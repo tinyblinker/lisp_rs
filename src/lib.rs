@@ -303,6 +303,14 @@ mod tests {
         let env = create_default_env();
         assert_eq!(eval_str("(+ 1 2)", &env).unwrap(), number!(3));
     }
+
+    #[test]
+    fn test_eval_subtraction() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(- 10 3)", &env).unwrap(), number!(7f64));
+        assert_eq!(eval_str("(- 10 3 2)", &env).unwrap(), number!(5f64));
+        assert_eq!(eval_str("(- 5)", &env).unwrap(), number!(-5f64));
+    }
 }
 
 /// eval() is the "Evaluator"
