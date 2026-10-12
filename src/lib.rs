@@ -109,7 +109,7 @@ pub fn create_default_env() -> LispEnv {
                 .collect();
             if nums.len() == 1 {
                 Ok(number!(1f64 / nums[0]))
-            } else {
+            }  else {
                 let result: f64 = nums[1..].iter().fold(nums[0], |acc, num| acc / num);
                 Ok(number!(result))
             }
@@ -318,6 +318,14 @@ mod tests {
         assert_eq!(eval_str("(* 10)", &env).unwrap(), number!(10f64));
         assert_eq!(eval_str("(* 10 3)", &env).unwrap(), number!(30f64));
         assert_eq!(eval_str("(* 10 2 3)", &env).unwrap(), number!(60f64));
+    }
+
+    #[test]
+    fn test_eval_division() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(/ 10 2)", &env).unwrap(), number!(5f64));
+        assert_eq!(eval_str("(/ 100 5 2)", &env).unwrap(), number!(10f64));
+        assert_eq!(eval_str("(/ 10)", &env).unwrap(), number!(0.1f64));
     }
 }
 
