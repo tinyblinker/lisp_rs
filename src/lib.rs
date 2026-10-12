@@ -119,6 +119,16 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    env.set(
+        "square".to_string(),
+        LispExp::Func(|args| {
+            if let LispExp::Number(num) = &args[0] {
+                Ok(number!(num * num))
+            } else {
+                Err(LispErr::Reason("square() needs a number".to_string()))
+            }
+        }),
+    );
     env
 }
 
@@ -347,6 +357,16 @@ mod tests {
                 "Cannot divide \'0\' in division".to_string(),
             ))
         );
+    }
+
+    #[test]
+    fn test_eval_square() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(square 2)", &env).unwrap(), number!(4f64));
+        assert_eq!(
+            eval_str("(square +)", &env),
+            Err(LispErr::Reason("square() needs a number".to_string()))
+        )
     }
 }
 
