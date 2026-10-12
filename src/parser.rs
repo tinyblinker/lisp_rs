@@ -40,9 +40,11 @@ fn read_seq(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
 /// parse the atom(num or symbol)
 pub fn parse_atom(token: &str) -> LispExp {
     if token == "#t" {
-        return LispExp::Symbol("#t".to_string());
+        return LispExp::Bool(true);
     } else if token == "#f" {
-        return LispExp::Symbol("#f".to_string());
+        return LispExp::Bool(false);
+    } else if token == "nil" {
+        return LispExp::Nil;
     }
     if let Ok(num) = token.parse::<f64>() {
         LispExp::Number(num)

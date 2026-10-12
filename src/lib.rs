@@ -11,6 +11,8 @@ pub enum LispExp {
     Symbol(String),                                   // for symbol
     List(Vec<LispExp>),                               // imply nested list
     Func(fn(&[LispExp]) -> Result<LispExp, LispErr>), // function type
+    Bool(bool),                                       // boolean values (#t, #f)
+    Nil,                                              // empty value (nil)
 }
 
 #[macro_export]
@@ -34,6 +36,22 @@ macro_rules! number {
 macro_rules! list {
     ($name:expr) => {
         LispExp::List($name.into())
+    };
+}
+
+#[macro_export]
+#[allow(unused_macros)]
+macro_rules! bool {
+    ($name:expr) => {
+        LispExp::Bool($name.into())
+    };
+}
+
+#[macro_export]
+#[allow(unused_macros)]
+macro_rules! nil {
+    () => {
+        LispExp::Nil
     };
 }
 
@@ -256,12 +274,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_atom_custom_symbols() {
-        assert_eq!(parse_atom("#t"), symbol!("#t"));
-        assert_eq!(parse_atom("#f"), symbol!("#f"));
-    }
-
-    #[test]
     fn test_error_missing_parenthese() {
         let env = LispEnv::new();
         assert_eq!(
@@ -388,6 +400,14 @@ mod tests {
         assert_eq!(eval_str("(+ (+ 1 2) 3)", &env).unwrap(), number!(6f64));
         assert_eq!(eval_str("(- 10 5 2)", &env).unwrap(), number!(3f64));
     }
+
+    #[test]
+    fn test_lisp_type_bool_nil() {
+        let env = create_default_env();
+        assert_eq!(eval_str("#t", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("#f", &env).unwrap(), bool!(false));
+        assert_eq!(eval_str("nil", &env).unwrap(), nil!());
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -396,7 +416,7 @@ fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
     match exp {
         LispExp::Number(x) => Ok(LispExp::Number(*x)),
         LispExp::Symbol(x) => env.get(x), // symbol->look up in "env"
-        LispExp::Func(_) => Ok(exp.clone()), // function itself is a value
+        LispExp::Bool(_) | LispExp::Nil | LispExp::Func(_) => Ok(exp.clone()), // function itself is a value
         LispExp::List(elements) => {
             if elements.is_empty() {
                 return Ok(LispExp::List(vec![]));
