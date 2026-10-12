@@ -311,6 +311,14 @@ mod tests {
         assert_eq!(eval_str("(- 10 3 2)", &env).unwrap(), number!(5f64));
         assert_eq!(eval_str("(- 5)", &env).unwrap(), number!(-5f64));
     }
+
+    #[test]
+    fn test_eval_multiplication() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(* 10)", &env).unwrap(), number!(10f64));
+        assert_eq!(eval_str("(* 10 3)", &env).unwrap(), number!(30f64));
+        assert_eq!(eval_str("(* 10 2 3)", &env).unwrap(), number!(60f64));
+    }
 }
 
 /// eval() is the "Evaluator"
