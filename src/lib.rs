@@ -7,6 +7,7 @@ pub mod parser;
 #[allow(unpredictable_function_pointer_comparisons)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispExp {
+    String(String),                                   // String type
     Number(f64),                                      // number type
     Symbol(String),                                   // for symbol
     List(Vec<LispExp>),                               // imply nested list
@@ -52,6 +53,14 @@ macro_rules! bool {
 macro_rules! nil {
     () => {
         LispExp::Nil
+    };
+}
+
+#[macro_export]
+#[allow(unused_macros)]
+macro_rules! string {
+    ($name:expr) => {
+        LispExp::String($name.into())
     };
 }
 
@@ -486,6 +495,15 @@ mod tests {
         assert_eq!(eval_str("(<= 3 3)", &env).unwrap(), bool!(true));
         assert_eq!(eval_str("(<= 3 1)", &env).unwrap(), bool!(false));
     }
+
+    #[test]
+    fn test_eval_lisp_type_string() {
+        let env = create_default_env();
+        assert_eq!(
+            eval_str("\"hello_lisp\"", &env).unwrap(),
+            string!("hello_lisp")
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -494,7 +512,7 @@ fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
     match exp {
         LispExp::Number(x) => Ok(LispExp::Number(*x)),
         LispExp::Symbol(x) => env.get(x), // symbol->look up in "env"
-        LispExp::Bool(_) | LispExp::Nil | LispExp::Func(_) => Ok(exp.clone()), // function itself is a value
+        LispExp::Bool(_) | LispExp::Nil | LispExp::Func(_) | LispExp::String(_) => Ok(exp.clone()), // function itself is a value
         LispExp::List(elements) => {
             if elements.is_empty() {
                 return Ok(LispExp::List(vec![]));
