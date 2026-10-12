@@ -368,6 +368,12 @@ mod tests {
             Err(LispErr::Reason("square() needs a number".to_string()))
         )
     }
+
+    #[test]
+    fn test_eval_unary_minus() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(- 1)", &env).unwrap(), number!(-1f64));
+    }
 }
 
 /// eval() is the "Evaluator"
