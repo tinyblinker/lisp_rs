@@ -44,7 +44,7 @@ fn is_valid_string(s: &str) -> Result<(), LispErr> {
         ));
     }
     // check 'esc' and 'closed' status
-    let (esc, closed) = chars.try_fold((false, false), |(esc, closed), ch| match (esc, ch) {
+    let (esc, closed) = chars.try_fold((false, false), |(esc, _closed), ch| match (esc, ch) {
         (true, _) => Ok((false, false)),
         (_, '\\') => Ok((true, false)),
         (_, '"') => Ok((false, true)),
