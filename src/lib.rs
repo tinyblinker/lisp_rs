@@ -137,6 +137,7 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // square function
     env.set(
         "square".to_string(),
         LispExp::Func(|args| {
@@ -147,17 +148,72 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "=" comparison
+    env.set(
+        "=".into(),
+        LispExp::Func(|args| {
+            if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
+                Ok(LispExp::Bool(x == y))
+            } else {
+                Err(LispErr::Reason("\'=\' needs a pair of numbers".to_string()))
+            }
+        }),
+    );
+    // ">" comparison
+    env.set(
+        ">".into(),
+        LispExp::Func(|args| {
+            if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
+                Ok(LispExp::Bool(x > y))
+            } else {
+                Err(LispErr::Reason("\'>\' needs a pair of numbers".to_string()))
+            }
+        }),
+    );
+    // ">=" comparison
+    env.set(
+        ">=".into(),
+        LispExp::Func(|args| {
+            if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
+                Ok(LispExp::Bool(x >= y))
+            } else {
+                Err(LispErr::Reason(
+                    "\'>=\' needs a pair of numbers".to_string(),
+                ))
+            }
+        }),
+    );
+    // "<" comparison
+    env.set(
+        "<".into(),
+        LispExp::Func(|args| {
+            if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
+                Ok(LispExp::Bool(x < y))
+            } else {
+                Err(LispErr::Reason("\'<\' needs a pair of numbers".to_string()))
+            }
+        }),
+    );
+    // "<=" comparison
+    env.set(
+        "<=".into(),
+        LispExp::Func(|args| {
+            if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
+                Ok(LispExp::Bool(x <= y))
+            } else {
+                Err(LispErr::Reason(
+                    "\'<=\' needs a pair of numbers".to_string(),
+                ))
+            }
+        }),
+    );
     env
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        env::LispEnv,
-        lexer::tokenize,
-        parser::{parse, parse_atom},
-    };
+    use crate::{env::LispEnv, lexer::tokenize, parser::parse};
 
     use super::*;
 
@@ -407,6 +463,28 @@ mod tests {
         assert_eq!(eval_str("#t", &env).unwrap(), bool!(true));
         assert_eq!(eval_str("#f", &env).unwrap(), bool!(false));
         assert_eq!(eval_str("nil", &env).unwrap(), nil!());
+    }
+
+    #[test]
+    fn test_eval_lisp_comparison() {
+        let env = create_default_env();
+        // =
+        assert_eq!(eval_str("(= 1 1)", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(= 1 2)", &env).unwrap(), bool!(false));
+        // >
+        assert_eq!(eval_str("(> 1 3)", &env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(> 3 1)", &env).unwrap(), bool!(true));
+        // >=
+        assert_eq!(eval_str("(>= 1 3)", &env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(>= 3 3)", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(>= 3 1)", &env).unwrap(), bool!(true));
+        // <
+        assert_eq!(eval_str("(< 1 3)", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(< 3 1)", &env).unwrap(), bool!(false));
+        // <=
+        assert_eq!(eval_str("(<= 1 3)", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(<= 3 3)", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(<= 3 1)", &env).unwrap(), bool!(false));
     }
 }
 
