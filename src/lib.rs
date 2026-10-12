@@ -374,6 +374,12 @@ mod tests {
         let env = create_default_env();
         assert_eq!(eval_str("(- 1)", &env).unwrap(), number!(-1f64));
     }
+
+    #[test]
+    fn test_eval_addition_multiple_numbers() {
+        let env = create_default_env();
+        assert_eq!(eval_str("(+ 1 2 3 4 5)", &env).unwrap(), number!(15f64));
+    }
 }
 
 /// eval() is the "Evaluator"
