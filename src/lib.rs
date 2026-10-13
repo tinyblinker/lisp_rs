@@ -234,10 +234,8 @@ pub fn create_default_env() -> LispEnv {
 
 #[cfg(test)]
 mod tests {
-
-    use crate::{env::LispEnv, lexer::tokenize, parser::parse};
-
     use super::*;
+    use crate::{env::LispEnv, lexer::tokenize, parser::parse};
 
     #[test]
     fn test_create_number() {
@@ -562,6 +560,13 @@ mod tests {
         let mut env = create_default_env();
         eval_str("(define x 10)", &mut env).unwrap();
         assert_eq!(eval_str("x", &mut env).unwrap(), number!(10f64));
+    }
+
+    #[test]
+    fn test_define_then_use_in_calc() {
+        let mut env = create_default_env();
+        eval_str("(define x 22)", &mut env).unwrap();
+        assert_eq!(eval_str("(+ x 5)", &mut env).unwrap(), number!(27f64));
     }
 }
 
