@@ -587,6 +587,13 @@ mod tests {
             )),
         }
     }
+
+    #[test]
+    fn test_lambda_call() {
+        let mut env = create_default_env();
+        let _ = eval_str("(define add (lambda (a b) (+ a b)))", &mut env).unwrap();
+        assert_eq!(eval_str("(add 4 9)", &mut env).unwrap(), number!(13f64));
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -662,6 +669,16 @@ fn eval(exp: &LispExp, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
                 .collect();
             match func {
                 LispExp::Func(f) => f(&(args?)),
+                LispExp::Lambda(lambda) => {
+                    // env isolation(by copy)
+                    let mut new_env: LispEnv = env.clone();
+                    // bind parameter names to argument values one by one(set them in cloned environment)
+                    for (param, arg) in lambda.params.iter().zip(args?.iter()) {
+                        new_env.set(param.clone(), arg.clone());
+                    }
+                    // eval func-body in the new_env
+                    eval(&lambda.body, &mut new_env)
+                }
                 _ => Err(LispErr::Reason("Not a function".to_string())),
             }
         }
