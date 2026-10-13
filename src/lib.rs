@@ -526,6 +526,15 @@ mod tests {
             number!(4f64)
         );
     }
+
+    #[test]
+    fn test_if_true_branch() {
+        let env = create_default_env();
+        assert_eq!(
+            eval_str("(if #t 1 2)", &env).unwrap(),
+            LispExp::Number(1f64)
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -536,10 +545,26 @@ fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
         LispExp::Symbol(x) => env.get(x), // symbol->look up in "env"
         LispExp::Bool(_) | LispExp::Nil | LispExp::Func(_) | LispExp::String(_) => Ok(exp.clone()), // function itself is a value
         LispExp::List(elements) => {
+            // empty list
             if elements.is_empty() {
                 return Ok(LispExp::List(vec![]));
-            } // empty list
-            let func = eval(&elements[0], &env)?; // eval the first ATOM to get the function
+            }
+            // if encounter "if", treat it in a different way
+            if let LispExp::Symbol(s) = &elements[0] {
+                if s == "if" && elements.len() == 4 {
+                    // (if condition true-branch false-branch)
+                    let cond = eval(&elements[1], &env)?;
+                    // only "#f" & "nil" are "false", else are "true"
+                    let is_true = !matches!(cond, LispExp::Bool(false) | LispExp::Nil);
+                    return if is_true {
+                        eval(&elements[2], &env)
+                    } else {
+                        eval(&elements[3], &env)
+                    };
+                }
+            }
+            // eval the first ATOM to get the function
+            let func = eval(&elements[0], &env)?;
             let args: Result<Vec<LispExp>, LispErr> =
                 elements[1..].iter().map(|arg| eval(arg, &env)).collect();
             match func {
