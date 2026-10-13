@@ -594,6 +594,15 @@ mod tests {
         let _ = eval_str("(define add (lambda (a b) (+ a b)))", &mut env).unwrap();
         assert_eq!(eval_str("(add 4 9)", &mut env).unwrap(), number!(13f64));
     }
+
+    #[test]
+    fn test_lambda_direct_call() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("((lambda (x) (* x x)) 10)", &mut env).unwrap(),
+            number!(100f64)
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
