@@ -535,6 +535,15 @@ mod tests {
             LispExp::Number(1f64)
         );
     }
+
+    #[test]
+    fn test_if_false_branch() {
+        let env = create_default_env();
+        assert_eq!(
+            eval_str("(if #f 1 2)", &env).unwrap(),
+            LispExp::Number(2f64)
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
