@@ -8,12 +8,20 @@ pub mod parser;
 #[derive(Clone, Debug, PartialEq)]
 pub enum LispExp {
     String(String),                                   // String type
+    Lambda(Box<LispLambda>),                          // user-difined function
     Number(f64),                                      // number type
     Symbol(String),                                   // for symbol
     List(Vec<LispExp>),                               // imply nested list
     Func(fn(&[LispExp]) -> Result<LispExp, LispErr>), // function type
     Bool(bool),                                       // boolean values (#t, #f)
     Nil,                                              // empty value (nil)
+}
+
+/// Lambda expression (user-defined function)
+#[derive(Clone, Debug, PartialEq)]
+pub struct LispLambda {
+    pub params: Vec<String>, // parameter names, e.g.["x", "y"]
+    pub body: Box<LispExp>,  // function body, use Box to avoid stackoverflow
 }
 
 #[macro_export]
@@ -568,6 +576,17 @@ mod tests {
         eval_str("(define x 22)", &mut env).unwrap();
         assert_eq!(eval_str("(+ x 5)", &mut env).unwrap(), number!(27f64));
     }
+
+    #[test]
+    fn test_create_lambda() -> Result<(), LispErr> {
+        let mut env = create_default_env();
+        match eval_str("(lambda (x) (* x x))", &mut env).unwrap() {
+            LispExp::Lambda(_) => Ok(()),
+            _ => Err(LispErr::Reason(
+                "eval_str() failed to create the lambda".to_string(),
+            )),
+        }
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -576,14 +595,19 @@ fn eval(exp: &LispExp, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
     match exp {
         LispExp::Number(x) => Ok(LispExp::Number(*x)),
         LispExp::Symbol(x) => env.get(x), // symbol->look up in "env"
-        LispExp::Bool(_) | LispExp::Nil | LispExp::Func(_) | LispExp::String(_) => Ok(exp.clone()), // function itself is a value
+        LispExp::Bool(_)
+        | LispExp::Nil
+        | LispExp::Func(_)
+        | LispExp::String(_)
+        | LispExp::Lambda(_) => Ok(exp.clone()), // function itself is a value
         LispExp::List(elements) => {
             // empty list
             if elements.is_empty() {
                 return Ok(LispExp::List(vec![]));
             }
-            // special treat for "if" and "define"
+            // special treat for "if" and "define" and "lambda"
             if let LispExp::Symbol(s) = &elements[0] {
+                // (if condition true_branch false_branch)
                 if s == "if" && elements.len() == 4 {
                     let cond = eval(&elements[1], &mut env)?;
                     let is_true = !matches!(cond, LispExp::Bool(false) | LispExp::Nil);
@@ -592,7 +616,9 @@ fn eval(exp: &LispExp, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     } else {
                         eval(&elements[3], &mut env)
                     };
-                } else if s == "define" && elements.len() == 3 {
+                }
+                // (define symbol value)
+                else if s == "define" && elements.len() == 3 {
                     let value = eval(&elements[2], &mut env).unwrap();
                     if let LispExp::Symbol(name) = &elements[1] {
                         env.set(name.to_string(), value);
@@ -602,6 +628,30 @@ fn eval(exp: &LispExp, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             "eval(): define needs a \'Symbol\'".to_string(),
                         ));
                     }
+                }
+                // (lambda (parameter-list) function-body)
+                else if s == "lambda" && elements.len() >= 3 {
+                    let params: Vec<String> = match &elements[1] {
+                        LispExp::List(param_list) => param_list
+                            .iter()
+                            .map(|param| {
+                                if let LispExp::Symbol(x) = param {
+                                    x.clone()
+                                } else {
+                                    "?".to_string() // return "?" if param_list's element is not a symbol
+                                }
+                            })
+                            .collect(),
+                        _ => {
+                            return Err(LispErr::Reason(
+                                "eval(): lambda\'s parament must be a list".to_string(),
+                            ))
+                        }
+                    };
+                    return Ok(LispExp::Lambda(Box::new(LispLambda {
+                        params: params,
+                        body: Box::new(elements[2].clone()),
+                    })));
                 }
             }
             // eval the first ATOM to get the function
