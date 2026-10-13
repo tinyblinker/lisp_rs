@@ -247,24 +247,27 @@ mod tests {
 
     #[test]
     fn test_eval_number() {
-        let env = LispEnv::new();
+        let mut env = LispEnv::new();
         let exp = LispExp::Number(88.0);
-        let result = eval(&exp, &env).unwrap(); // eval() is essential,TDD to develop it
+        let result = eval(&exp, &mut env).unwrap(); // eval() is essential,TDD to develop it
         assert_eq!(result, LispExp::Number(88.0));
     }
 
     #[test]
     fn test_eval_num_in_str() {
-        let env = LispEnv::new();
-        assert_eq!(LispExp::Number(36f64), eval_str(" 36 ", &env).unwrap());
-        assert_eq!(LispExp::Number(78f64), eval_str("78", &env).unwrap());
+        let mut env = LispEnv::new();
+        assert_eq!(LispExp::Number(36f64), eval_str(" 36 ", &mut env).unwrap());
+        assert_eq!(LispExp::Number(78f64), eval_str("78", &mut env).unwrap());
     }
 
     #[test]
     fn test_eval_negative_num_in_str() {
-        let env = LispEnv::new();
-        assert_eq!(LispExp::Number(-36f64), eval_str(" -36 ", &env).unwrap());
-        assert_eq!(LispExp::Number(-78f64), eval_str("-78", &env).unwrap());
+        let mut env = LispEnv::new();
+        assert_eq!(
+            LispExp::Number(-36f64),
+            eval_str(" -36 ", &mut env).unwrap()
+        );
+        assert_eq!(LispExp::Number(-78f64), eval_str("-78", &mut env).unwrap());
     }
 
     #[test]
@@ -306,9 +309,9 @@ mod tests {
 
     #[test]
     fn test_eval_str_source_code() {
-        let env = LispEnv::new();
-        let result = eval_str("+", &env);
-        assert_eq!(result, eval(&LispExp::Symbol("+".into()), &env));
+        let mut env = LispEnv::new();
+        let result = eval_str("+", &mut env);
+        assert_eq!(result, eval(&LispExp::Symbol("+".into()), &mut env));
     }
 
     #[test]
@@ -353,9 +356,9 @@ mod tests {
 
     #[test]
     fn test_error_missing_parenthese() {
-        let env = LispEnv::new();
+        let mut env = LispEnv::new();
         assert_eq!(
-            eval_str("(+ 1 2", &env),
+            eval_str("(+ 1 2", &mut env),
             Err(LispErr::Reason("Missing \')\'".to_string()))
         );
     }
@@ -382,14 +385,14 @@ mod tests {
     fn test_eval_symbol() {
         let mut env = LispEnv::new();
         env.set("x".into(), number!(42f64));
-        assert_eq!(eval_str("x", &env).unwrap(), number!(42f64));
+        assert_eq!(eval_str("x", &mut env).unwrap(), number!(42f64));
     }
 
     #[test]
     fn test_set_get_pi() {
         let mut env = LispEnv::new();
         env.set("pi".into(), number!(3.14159));
-        assert_eq!(eval_str("pi", &env).unwrap(), number!(3.14159))
+        assert_eq!(eval_str("pi", &mut env).unwrap(), number!(3.14159))
     }
 
     /// the same key set multiple times will let the last one to overwrite
@@ -404,45 +407,45 @@ mod tests {
 
     #[test]
     fn test_eval_addition() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(+ 1 2)", &env).unwrap(), number!(3));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(+ 1 2)", &mut env).unwrap(), number!(3));
     }
 
     #[test]
     fn test_eval_subtraction() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(- 10 3)", &env).unwrap(), number!(7f64));
-        assert_eq!(eval_str("(- 10 3 2)", &env).unwrap(), number!(5f64));
-        assert_eq!(eval_str("(- 5)", &env).unwrap(), number!(-5f64));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(- 10 3)", &mut env).unwrap(), number!(7f64));
+        assert_eq!(eval_str("(- 10 3 2)", &mut env).unwrap(), number!(5f64));
+        assert_eq!(eval_str("(- 5)", &mut env).unwrap(), number!(-5f64));
     }
 
     #[test]
     fn test_eval_multiplication() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(* 10)", &env).unwrap(), number!(10f64));
-        assert_eq!(eval_str("(* 10 3)", &env).unwrap(), number!(30f64));
-        assert_eq!(eval_str("(* 10 2 3)", &env).unwrap(), number!(60f64));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(* 10)", &mut env).unwrap(), number!(10f64));
+        assert_eq!(eval_str("(* 10 3)", &mut env).unwrap(), number!(30f64));
+        assert_eq!(eval_str("(* 10 2 3)", &mut env).unwrap(), number!(60f64));
     }
 
     #[test]
     fn test_eval_division() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(/ 10 2)", &env).unwrap(), number!(5f64));
-        assert_eq!(eval_str("(/ 100 5 2)", &env).unwrap(), number!(10f64));
-        assert_eq!(eval_str("(/ 10)", &env).unwrap(), number!(0.1f64));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(/ 10 2)", &mut env).unwrap(), number!(5f64));
+        assert_eq!(eval_str("(/ 100 5 2)", &mut env).unwrap(), number!(10f64));
+        assert_eq!(eval_str("(/ 10)", &mut env).unwrap(), number!(0.1f64));
     }
 
     #[test]
     fn test_eval_division_with_zero_error() {
-        let env = create_default_env();
+        let mut env = create_default_env();
         assert_eq!(
-            eval_str("(/ 10 0)", &env),
+            eval_str("(/ 10 0)", &mut env),
             Err(LispErr::Reason(
                 "Cannot divide \'0\' in division".to_string(),
             ))
         );
         assert_eq!(
-            eval_str("(/ 100 5 2 23 0)", &env),
+            eval_str("(/ 100 5 2 23 0)", &mut env),
             Err(LispErr::Reason(
                 "Cannot divide \'0\' in division".to_string(),
             ))
@@ -451,113 +454,120 @@ mod tests {
 
     #[test]
     fn test_eval_square() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(square 2)", &env).unwrap(), number!(4f64));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(square 2)", &mut env).unwrap(), number!(4f64));
         assert_eq!(
-            eval_str("(square +)", &env),
+            eval_str("(square +)", &mut env),
             Err(LispErr::Reason("square() needs a number".to_string()))
         )
     }
 
     #[test]
     fn test_eval_unary_minus() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(- 1)", &env).unwrap(), number!(-1f64));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(- 1)", &mut env).unwrap(), number!(-1f64));
     }
 
     #[test]
     fn test_eval_addition_multiple_numbers() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(+ 1 2 3 4 5)", &env).unwrap(), number!(15f64));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(+ 1 2 3 4 5)", &mut env).unwrap(), number!(15f64));
     }
 
     #[test]
     fn eval_more_complex_arithmetic() {
-        let env = create_default_env();
-        assert_eq!(eval_str("(+ 1 2 3)", &env).unwrap(), number!(6f64));
-        assert_eq!(eval_str("(+ (+ 1 2) 3)", &env).unwrap(), number!(6f64));
-        assert_eq!(eval_str("(- 10 5 2)", &env).unwrap(), number!(3f64));
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(+ 1 2 3)", &mut env).unwrap(), number!(6f64));
+        assert_eq!(eval_str("(+ (+ 1 2) 3)", &mut env).unwrap(), number!(6f64));
+        assert_eq!(eval_str("(- 10 5 2)", &mut env).unwrap(), number!(3f64));
     }
 
     #[test]
     fn test_lisp_type_bool_nil() {
-        let env = create_default_env();
-        assert_eq!(eval_str("#t", &env).unwrap(), bool!(true));
-        assert_eq!(eval_str("#f", &env).unwrap(), bool!(false));
-        assert_eq!(eval_str("nil", &env).unwrap(), nil!());
+        let mut env = create_default_env();
+        assert_eq!(eval_str("#t", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("#f", &mut env).unwrap(), bool!(false));
+        assert_eq!(eval_str("nil", &mut env).unwrap(), nil!());
     }
 
     #[test]
     fn test_eval_lisp_comparison() {
-        let env = create_default_env();
+        let mut env = create_default_env();
         // =
-        assert_eq!(eval_str("(= 1 1)", &env).unwrap(), bool!(true));
-        assert_eq!(eval_str("(= 1 2)", &env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(= 1 1)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(= 1 2)", &mut env).unwrap(), bool!(false));
         // >
-        assert_eq!(eval_str("(> 1 3)", &env).unwrap(), bool!(false));
-        assert_eq!(eval_str("(> 3 1)", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(> 1 3)", &mut env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(> 3 1)", &mut env).unwrap(), bool!(true));
         // >=
-        assert_eq!(eval_str("(>= 1 3)", &env).unwrap(), bool!(false));
-        assert_eq!(eval_str("(>= 3 3)", &env).unwrap(), bool!(true));
-        assert_eq!(eval_str("(>= 3 1)", &env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(>= 1 3)", &mut env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(>= 3 3)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(>= 3 1)", &mut env).unwrap(), bool!(true));
         // <
-        assert_eq!(eval_str("(< 1 3)", &env).unwrap(), bool!(true));
-        assert_eq!(eval_str("(< 3 1)", &env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(< 1 3)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(< 3 1)", &mut env).unwrap(), bool!(false));
         // <=
-        assert_eq!(eval_str("(<= 1 3)", &env).unwrap(), bool!(true));
-        assert_eq!(eval_str("(<= 3 3)", &env).unwrap(), bool!(true));
-        assert_eq!(eval_str("(<= 3 1)", &env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(<= 1 3)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(<= 3 3)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(<= 3 1)", &mut env).unwrap(), bool!(false));
     }
 
     #[test]
     fn test_eval_lisp_type_string() {
-        let env = create_default_env();
+        let mut env = create_default_env();
         assert_eq!(
-            eval_str("\"hello_lisp\"", &env).unwrap(),
+            eval_str("\"hello_lisp\"", &mut env).unwrap(),
             string!("hello_lisp")
         );
     }
 
     #[test]
     fn test_eval_string_length() {
-        let env = create_default_env();
+        let mut env = create_default_env();
         assert_eq!(
-            eval_str("(string-length \"abcd\")", &env).unwrap(),
+            eval_str("(string-length \"abcd\")", &mut env).unwrap(),
             number!(4f64)
         );
     }
 
     #[test]
     fn test_if_true_branch() {
-        let env = create_default_env();
+        let mut env = create_default_env();
         assert_eq!(
-            eval_str("(if #t 1 2)", &env).unwrap(),
+            eval_str("(if #t 1 2)", &mut env).unwrap(),
             LispExp::Number(1f64)
         );
     }
 
     #[test]
     fn test_if_false_branch() {
-        let env = create_default_env();
+        let mut env = create_default_env();
         assert_eq!(
-            eval_str("(if #f 1 2)", &env).unwrap(),
+            eval_str("(if #f 1 2)", &mut env).unwrap(),
             LispExp::Number(2f64)
         );
     }
 
     #[test]
     fn test_if_comparison() {
-        let env = create_default_env();
+        let mut env = create_default_env();
         assert_eq!(
-            eval_str("(if (> 1 2) 1 2)", &env).unwrap(),
+            eval_str("(if (> 1 2) 1 2)", &mut env).unwrap(),
             LispExp::Number(2f64)
         );
+    }
+
+    #[test]
+    fn test_define_variable_and_lookup_it() {
+        let mut env = create_default_env();
+        eval_str("(define x 10)", &mut env).unwrap();
+        assert_eq!(eval_str("x", &mut env).unwrap(), number!(10f64));
     }
 }
 
 /// eval() is the "Evaluator"
 #[allow(dead_code)]
-fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
+fn eval(exp: &LispExp, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
     match exp {
         LispExp::Number(x) => Ok(LispExp::Number(*x)),
         LispExp::Symbol(x) => env.get(x), // symbol->look up in "env"
@@ -567,24 +577,34 @@ fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
             if elements.is_empty() {
                 return Ok(LispExp::List(vec![]));
             }
-            // if encounter "if", treat it in a different way
+            // special treat for "if" and "define"
             if let LispExp::Symbol(s) = &elements[0] {
                 if s == "if" && elements.len() == 4 {
-                    // (if condition true-branch false-branch)
-                    let cond = eval(&elements[1], &env)?;
-                    // only "#f" & "nil" are "false", else are "true"
+                    let cond = eval(&elements[1], &mut env)?;
                     let is_true = !matches!(cond, LispExp::Bool(false) | LispExp::Nil);
                     return if is_true {
-                        eval(&elements[2], &env)
+                        eval(&elements[2], &mut env)
                     } else {
-                        eval(&elements[3], &env)
+                        eval(&elements[3], &mut env)
                     };
+                } else if s == "define" && elements.len() == 3 {
+                    let value = eval(&elements[2], &mut env).unwrap();
+                    if let LispExp::Symbol(name) = &elements[1] {
+                        env.set(name.to_string(), value);
+                        return Ok(LispExp::Nil); // define itself return nil
+                    } else {
+                        return Err(LispErr::Reason(
+                            "eval(): define needs a \'Symbol\'".to_string(),
+                        ));
+                    }
                 }
             }
             // eval the first ATOM to get the function
-            let func = eval(&elements[0], &env)?;
-            let args: Result<Vec<LispExp>, LispErr> =
-                elements[1..].iter().map(|arg| eval(arg, &env)).collect();
+            let func = eval(&elements[0], &mut env)?;
+            let args: Result<Vec<LispExp>, LispErr> = elements[1..]
+                .iter()
+                .map(|arg| eval(arg, &mut env))
+                .collect();
             match func {
                 LispExp::Func(f) => f(&(args?)),
                 _ => Err(LispErr::Reason("Not a function".to_string())),
@@ -596,11 +616,11 @@ fn eval(exp: &LispExp, env: &LispEnv) -> Result<LispExp, LispErr> {
 /// eval_str() is the pipeline
 /// source_code-->Lexer(tokenize())->[tokens]->Parser(parse())->[AST]->Evaluator(eval())-->Value
 #[allow(dead_code)]
-fn eval_str(source: &str, env: &LispEnv) -> Result<LispExp, LispErr> {
+fn eval_str(source: &str, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
     // "Lexer" to tokenize the source code to tokens
     let tokens = tokenize(source);
     // "Parser" to parse the tokens to AST
     let (exp, _) = parse(&tokens)?;
     // "Evaluator" to eval the AST
-    eval(&exp, env)
+    eval(&exp, &mut env)
 }
