@@ -544,6 +544,15 @@ mod tests {
             LispExp::Number(2f64)
         );
     }
+
+    #[test]
+    fn test_if_comparison() {
+        let env = create_default_env();
+        assert_eq!(
+            eval_str("(if (> 1 2) 1 2)", &env).unwrap(),
+            LispExp::Number(2f64)
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
