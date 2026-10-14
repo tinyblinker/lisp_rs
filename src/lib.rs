@@ -634,6 +634,7 @@ mod tests {
             &mut env,
         )
         .unwrap();
+
         assert_eq!(
             eval_str(
                 "((compose (lambda (x) (* x 2)) (lambda (x) (* x 3))) 20)",
