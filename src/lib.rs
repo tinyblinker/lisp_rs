@@ -614,6 +614,17 @@ mod tests {
         assert_eq!(eval_str("(abs 10)", &mut env).unwrap(), number!(10f64));
         assert_eq!(eval_str("(abs -10)", &mut env).unwrap(), number!(10f64));
     }
+
+    #[test]
+    fn test_implementation_of_sum_to_function() {
+        let mut env = create_default_env();
+        let _ = eval_str(
+            "(define sum-to (lambda (x) (if (= x 1) 1 (+ x (sum-to (- x 1))))))",
+            &mut env,
+        );
+        assert_eq!(eval_str("(sum-to 5)", &mut env).unwrap(), number!(15f64));
+        assert_eq!(eval_str("(sum-to 6)", &mut env).unwrap(), number!(21f64));
+    }
 }
 
 /// eval() is the "Evaluator"
