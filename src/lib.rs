@@ -625,6 +625,24 @@ mod tests {
         assert_eq!(eval_str("(sum-to 5)", &mut env).unwrap(), number!(15f64));
         assert_eq!(eval_str("(sum-to 6)", &mut env).unwrap(), number!(21f64));
     }
+
+    #[test]
+    fn test_implementation_of_compose_function() {
+        let mut env = create_default_env();
+        let _ = eval_str(
+            "(define compose (lambda (f g) (lambda (x) (f (g x)))))",
+            &mut env,
+        )
+        .unwrap();
+        assert_eq!(
+            eval_str(
+                "((compose (lambda (x) (* x 2)) (lambda (x) (* x 3))) 20)",
+                &mut env
+            )
+            .unwrap(),
+            number!(120f64)
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
