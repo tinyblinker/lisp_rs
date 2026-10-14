@@ -644,6 +644,18 @@ mod tests {
             number!(120f64)
         );
     }
+
+    #[test]
+    fn test_a_strange_function() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("((lambda (x) x) (lambda (x) x))", &mut env).unwrap(),
+            LispExp::Lambda(Box::new(LispLambda {
+                params: vec!["x".to_string()],
+                body: Box::new(LispExp::Symbol("x".to_string()))
+            }))
+        );
+    }
 }
 
 /// eval() is the "Evaluator"
