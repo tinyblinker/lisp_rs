@@ -603,6 +603,17 @@ mod tests {
             number!(100f64)
         );
     }
+
+    #[test]
+    fn test_implementation_of_abs_function() {
+        let mut env = create_default_env();
+        let _ = eval_str(
+            "(define abs (lambda (x) (if (>= x 0) x (- 0 x))))",
+            &mut env,
+        );
+        assert_eq!(eval_str("(abs 10)", &mut env).unwrap(), number!(10f64));
+        assert_eq!(eval_str("(abs -10)", &mut env).unwrap(), number!(10f64));
+    }
 }
 
 /// eval() is the "Evaluator"
