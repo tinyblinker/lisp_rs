@@ -660,6 +660,18 @@ mod tests {
             }))
         );
     }
+
+    #[test]
+    fn test_closure() {
+        let mut env = create_default_env();
+        eval_str(
+            "(define make-addr (lambda (n) (lambda (x) (+ x n))))",
+            &mut env,
+        )
+        .unwrap();
+        eval_str("(define add5 (make-addr 5))", &mut env).unwrap();
+        assert_eq!(eval_str("(add5 10)", &mut env).unwrap(), number!(15f64));
+    }
 }
 
 /// eval() is the "Evaluator"
