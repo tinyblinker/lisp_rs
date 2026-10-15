@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{env::LispEnv, lexer::tokenize, parser::parse};
 
 pub mod env;
@@ -20,8 +22,9 @@ pub enum LispExp {
 /// Lambda expression (user-defined function)
 #[derive(Clone, Debug, PartialEq)]
 pub struct LispLambda {
-    pub params: Vec<String>, // parameter names, e.g.["x", "y"]
-    pub body: Box<LispExp>,  // function body, use Box to avoid stackoverflow
+    pub params: Vec<String>,       // parameter names, e.g.["x", "y"]
+    pub body: Box<LispExp>,        // function body, use Box to avoid stackoverflow
+    pub env: Rc<RefCell<LispEnv>>, // the env of lambda
 }
 
 #[macro_export]
@@ -652,7 +655,8 @@ mod tests {
             eval_str("((lambda (x) x) (lambda (x) x))", &mut env).unwrap(),
             LispExp::Lambda(Box::new(LispLambda {
                 params: vec!["x".to_string()],
-                body: Box::new(LispExp::Symbol("x".to_string()))
+                body: Box::new(LispExp::Symbol("x".to_string())),
+                env: Rc::new(RefCell::new(env)),
             }))
         );
     }
@@ -720,6 +724,7 @@ fn eval(exp: &LispExp, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     return Ok(LispExp::Lambda(Box::new(LispLambda {
                         params: params,
                         body: Box::new(elements[2].clone()),
+                        env: Rc::new(RefCell::new(env.clone())), // remember the env in definition-time
                     })));
                 }
             }
@@ -733,7 +738,7 @@ fn eval(exp: &LispExp, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
                 LispExp::Func(f) => f(&(args?)),
                 LispExp::Lambda(lambda) => {
                     // env isolation(by copy)
-                    let mut new_env: LispEnv = env.clone();
+                    let mut new_env: LispEnv = LispEnv::with_outer(lambda.env);
                     // bind parameter names to argument values one by one(set them in cloned environment)
                     for (param, arg) in lambda.params.iter().zip(args?.iter()) {
                         new_env.set(param.clone(), arg.clone());
