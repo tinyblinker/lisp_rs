@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use crate::{LispErr, LispExp};
 
 /// environment: like an address book(key->value)
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct LispEnv {
     pub data: HashMap<String, LispExp>,
     pub outer: Option<Rc<RefCell<LispEnv>>>,
