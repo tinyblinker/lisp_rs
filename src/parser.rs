@@ -1,4 +1,4 @@
-use crate::{LispErr, LispExp};
+use crate::{interner::intern, LispErr, LispExp};
 
 /// parse() is the "Parser"'s main
 #[allow(dead_code)]
@@ -78,7 +78,7 @@ pub fn parse_atom(token: &str) -> LispExp {
         if is_valid_string(token.into()).is_ok() {
             LispExp::String(token[1..(token.len() - 1)].into())
         } else {
-            LispExp::Symbol(token.into())
+            LispExp::Symbol(intern(token))
         }
     }
 }

@@ -1,8 +1,9 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{env::LispEnv, lexer::tokenize, parser::parse};
+use crate::{env::LispEnv, interner::intern, lexer::tokenize, parser::parse};
 
 pub mod env;
+pub mod interner;
 pub mod lexer;
 pub mod parser;
 
@@ -12,7 +13,7 @@ pub enum LispExp {
     String(String),                                   // String type
     Lambda(Box<LispLambda>),                          // user-difined function
     Number(f64),                                      // number type
-    Symbol(String),                                   // for symbol
+    Symbol(u64),                                      // for symbol
     List(Vec<LispExp>),                               // imply nested list
     Func(fn(&[LispExp]) -> Result<LispExp, LispErr>), // function type
     Bool(bool),                                       // boolean values (#t, #f)
@@ -22,7 +23,7 @@ pub enum LispExp {
 /// Lambda expression (user-defined function)
 #[derive(Clone, Debug, PartialEq)]
 pub struct LispLambda {
-    pub params: Vec<String>,       // parameter names, e.g.["x", "y"]
+    pub params: Vec<u64>,          // parameter names, e.g.["x", "y"]
     pub body: Box<LispExp>,        // function body, use Box to avoid stackoverflow
     pub env: Rc<RefCell<LispEnv>>, // the env of lambda
 }
@@ -30,8 +31,8 @@ pub struct LispLambda {
 #[macro_export]
 #[allow(unused_macros)]
 macro_rules! symbol {
-    ($name:literal) => {
-        LispExp::Symbol($name.into())
+    ($name:expr) => {
+        LispExp::Symbol($name)
     };
 }
 
@@ -84,7 +85,7 @@ pub fn create_default_env() -> LispEnv {
     let mut env = LispEnv::new();
     // set "+" function
     env.set(
-        "+".into(),
+        intern("+"),
         LispExp::Func(|args| {
             let sum: f64 = args
                 .iter()
@@ -101,7 +102,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // set "-" function
     env.set(
-        "-".into(),
+        intern("-"),
         LispExp::Func(|args| {
             let nums: Vec<f64> = args
                 .iter()
@@ -122,7 +123,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // set "*" function
     env.set(
-        "*".into(),
+        intern("*"),
         LispExp::Func(|args| {
             let result: f64 = args.iter().fold(1.0f64, |acc, arg| match arg {
                 LispExp::Number(num) => num * acc,
@@ -133,7 +134,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // set "/" function
     env.set(
-        "/".into(),
+        intern("/"),
         LispExp::Func(|args| {
             let nums: Vec<f64> = args
                 .iter()
@@ -159,7 +160,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // square function
     env.set(
-        "square".to_string(),
+        intern("square"),
         LispExp::Func(|args| {
             if let LispExp::Number(num) = &args[0] {
                 Ok(number!(num * num))
@@ -170,7 +171,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // "=" comparison
     env.set(
-        "=".into(),
+        intern("="),
         LispExp::Func(|args| {
             if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
                 Ok(LispExp::Bool(x == y))
@@ -181,7 +182,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // ">" comparison
     env.set(
-        ">".into(),
+        intern(">"),
         LispExp::Func(|args| {
             if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
                 Ok(LispExp::Bool(x > y))
@@ -192,7 +193,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // ">=" comparison
     env.set(
-        ">=".into(),
+        intern(">="),
         LispExp::Func(|args| {
             if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
                 Ok(LispExp::Bool(x >= y))
@@ -205,7 +206,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // "<" comparison
     env.set(
-        "<".into(),
+        intern("<"),
         LispExp::Func(|args| {
             if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
                 Ok(LispExp::Bool(x < y))
@@ -216,7 +217,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // "<=" comparison
     env.set(
-        "<=".into(),
+        intern("<="),
         LispExp::Func(|args| {
             if let (LispExp::Number(x), LispExp::Number(y)) = (&args[0], &args[1]) {
                 Ok(LispExp::Bool(x <= y))
@@ -229,7 +230,7 @@ pub fn create_default_env() -> LispEnv {
     );
     // "string-length" function
     env.set(
-        "string-length".into(),
+        intern("string-length"),
         LispExp::Func(|args| {
             if let LispExp::String(str) = &args[0] {
                 Ok(LispExp::Number(str.len() as f64))
@@ -246,7 +247,11 @@ pub fn create_default_env() -> LispEnv {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::LispEnv, lexer::tokenize, parser::parse};
+    use crate::{
+        env::LispEnv,
+        lexer::tokenize,
+        parser::{parse, parse_atom},
+    };
 
     #[test]
     fn test_create_number() {
@@ -306,7 +311,7 @@ mod tests {
     fn test_parse_symbol_atom() {
         let tokens = vec!["+".to_string()];
         let (exp, _) = parse(&tokens).unwrap();
-        assert_eq!(exp, LispExp::Symbol("+".into()));
+        assert_eq!(exp, LispExp::Symbol(intern("+")));
     }
 
     #[test]
@@ -320,7 +325,7 @@ mod tests {
     fn test_eval_str_source_code() {
         let mut env = LispEnv::new();
         let result = eval_str("+", &mut env);
-        assert_eq!(result, eval(&LispExp::Symbol("+".into()), &mut env));
+        assert_eq!(result, eval(&LispExp::Symbol(intern("+")), &mut env));
     }
 
     #[test]
@@ -340,9 +345,9 @@ mod tests {
         assert_eq!(
             result,
             list!(vec![
-                symbol!("+"),
+                symbol!(intern("+")),
                 number!(1f64),
-                list!(vec![symbol!("*"), number!(2f64), number!(3f64)])
+                list!(vec![symbol!(intern("*")), number!(2f64), number!(3f64)])
             ])
         );
     }
@@ -376,8 +381,8 @@ mod tests {
     #[test]
     fn test_lispenv_set_get() {
         let mut env = LispEnv::new();
-        env.set("a".into(), number!(100f32));
-        assert_eq!(env.get("a").unwrap(), number!(100f32));
+        env.set(intern("a"), number!(100f32));
+        assert_eq!(env.get(intern("a")).unwrap(), number!(100f32));
     }
 
     #[test]
@@ -385,22 +390,25 @@ mod tests {
         let env = LispEnv::new();
         let var = "a";
         assert_eq!(
-            env.get(var),
-            Err(LispErr::Reason(format!("Undefined variable: {}", var)))
+            env.get(intern(var)),
+            Err(LispErr::Reason(format!(
+                "Undefined variable: {}",
+                intern(var)
+            )))
         )
     }
 
     #[test]
     fn test_eval_symbol() {
         let mut env = LispEnv::new();
-        env.set("x".into(), number!(42f64));
+        env.set(intern("x"), number!(42f64));
         assert_eq!(eval_str("x", &mut env).unwrap(), number!(42f64));
     }
 
     #[test]
     fn test_set_get_pi() {
         let mut env = LispEnv::new();
-        env.set("pi".into(), number!(3.14159));
+        env.set(intern("pi"), number!(3.14159));
         assert_eq!(eval_str("pi", &mut env).unwrap(), number!(3.14159))
     }
 
@@ -409,9 +417,9 @@ mod tests {
     #[test]
     fn test_set_a_key_twice() {
         let mut env = LispEnv::new();
-        env.set("a".into(), number!(3));
-        env.set("a".into(), number!(2));
-        assert_eq!(env.get("a").unwrap(), number!(2));
+        env.set(intern("a"), number!(3));
+        env.set(intern("a"), number!(2));
+        assert_eq!(env.get(intern("a")).unwrap(), number!(2));
     }
 
     #[test]
@@ -656,8 +664,8 @@ mod tests {
         assert_eq!(
             eval_str("((lambda (x) x) (lambda (x) x))", &mut env).unwrap(),
             LispExp::Lambda(Box::new(LispLambda {
-                params: vec!["x".to_string()],
-                body: Box::new(LispExp::Symbol("x".to_string())),
+                params: vec![intern("x")],
+                body: Box::new(LispExp::Symbol(intern("x"))),
                 env: expected_env,
             }))
         );
@@ -686,6 +694,70 @@ mod tests {
         let res = eval_str("(loop 10000)", &mut env).unwrap();
         assert_eq!(res, string!("done"));
     }
+
+    #[test]
+    fn test_intern_same_name_gets_same_id() {
+        let s1 = format!("intern-{}", "demo");
+        let s2 = ["intern-", "demo"].concat();
+        assert_ne!(s1.as_ptr(), s2.as_ptr()); 
+        assert_eq!(intern(&s1), intern(&s2)); 
+        assert_eq!(intern(&s1), intern("intern-demo")); 
+    }
+
+    #[test]
+    fn test_intern_distinct_names_get_distinct_ids() {
+        assert_ne!(intern("interning-name-a"), intern("interning-name-b"));
+    }
+
+    #[test]
+    fn test_parse_atom_reuses_symbol_id() {
+        assert_eq!(parse_atom("foo"), parse_atom("foo"));
+        assert_eq!(parse_atom("foo"), LispExp::Symbol(intern("foo")));
+    }
+
+    #[test]
+    fn test_ast_shares_symbol_id_within_expression() {
+        let tokens = tokenize("(+ foo foo)");
+        let (exp, _) = parse(&tokens).unwrap();
+        match &exp {
+            LispExp::List(elements) => {
+                match (&elements[1], &elements[2]) {
+                    (LispExp::Symbol(foo1), LispExp::Symbol(foo2)) => {
+                        assert_eq!(foo1, foo2); 
+                        assert_eq!(*foo1, intern("foo")); 
+                    }
+                    _ => panic!("expected two symbols in (+ foo foo)"),
+                }
+            }
+            _ => panic!("expected a list expression"),
+        }
+    }
+
+    #[test]
+    fn test_env_lookup_with_freshly_allocated_name() {
+        let mut env = LispEnv::new();
+        env.set(intern("fresh-name"), number!(42f64));
+        let name = format!("fresh-{}", "name"); // 运行时新分配
+        assert_eq!(env.get(intern(&name)).unwrap(), number!(42f64));
+    }
+
+    #[test]
+    fn test_eval_reuses_symbol_id_across_pipeline() {
+        let mut env = create_default_env();
+        eval_str("(define x 10)", &mut env).unwrap();
+        assert_eq!(eval_str("(+ x x)", &mut env).unwrap(), number!(20f64));
+    }
+
+    #[test]
+    fn test_special_form_marker_consistent_across_pipeline() {
+        let tokens = tokenize("(if #t 1 2)");
+        let (exp, _) = parse(&tokens).unwrap();
+        if let LispExp::List(elements) = &exp {
+            assert_eq!(elements[0], LispExp::Symbol(intern("if")));
+        }
+        let mut env = create_default_env();
+        assert_eq!(eval(&exp, &mut env).unwrap(), number!(1f64));
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -709,7 +781,7 @@ fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
             }
             // -- Symbols: look up environment --
             LispExp::Symbol(x) => {
-                let res = current_env.get(x);
+                let res = current_env.get(*x);
                 *env = current_env; // return the original environment
                 return res;
             }
@@ -722,7 +794,7 @@ fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                 // -- "if" (tail position optimization) --
                 if let LispExp::Symbol(s) = &elements[0] {
                     // (if condition true_branch false_branch)
-                    if s == "if" && elements.len() == 4 {
+                    if *s == intern("if") && elements.len() == 4 {
                         let cond = eval(&elements[1], &mut current_env)?;
                         let is_true = !matches!(cond, LispExp::Bool(false) | LispExp::Nil);
                         // TCO!!!! do not recursively eval, update expression then continue
@@ -734,7 +806,9 @@ fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         continue;
                     }
                     // -- "define" (supports  recursive definition) --
-                    else if s == "define" && elements.len() == 3 {
+                    else if *s == intern("define") && elements.len() == 3 {
+                        println!("###[debug]elements = {:?};", elements);
+                        println!("###[debug]elements[1] = {:?};", elements[1]);
                         // use "Rc" to share environment: let closures "sees" themselves
                         if let LispExp::Symbol(name) = &elements[1] {
                             let share_env = Rc::new(RefCell::new(std::mem::take(&mut current_env)));
@@ -759,15 +833,15 @@ fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         }
                     }
                     // -- lambda --
-                    else if s == "lambda" && elements.len() >= 3 {
-                        let params: Vec<String> = match &elements[1] {
+                    else if *s == intern("lambda") && elements.len() >= 3 {
+                        let params: Vec<u64> = match &elements[1] {
                             LispExp::List(param_list) => param_list
                                 .iter()
                                 .map(|param| {
                                     if let LispExp::Symbol(x) = param {
                                         x.clone()
                                     } else {
-                                        "?".to_string() // return "?" if param_list's element is not a symbol
+                                        intern("?") // return "?" if param_list's element is not a symbol
                                     }
                                 })
                                 .collect(),

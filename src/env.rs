@@ -5,7 +5,7 @@ use crate::{LispErr, LispExp};
 /// environment: like an address book(key->value)
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct LispEnv {
-    pub data: HashMap<String, LispExp>,
+    pub data: HashMap<u64, LispExp>,
     pub outer: Option<Rc<RefCell<LispEnv>>>,
 }
 
@@ -16,11 +16,11 @@ impl LispEnv {
             outer: None,
         }
     }
-    pub fn set(&mut self, key: String, value: LispExp) {
+    pub fn set(&mut self, key: u64, value: LispExp) {
         self.data.insert(key, value);
     }
-    pub fn get(&self, key: &str) -> Result<LispExp, LispErr> {
-        if let Some(var) = self.data.get(key) {
+    pub fn get(&self, key: u64) -> Result<LispExp, LispErr> {
+        if let Some(var) = self.data.get(&key) {
             Ok(var.clone())
         } else if let Some(outer) = &self.outer {
             outer.borrow().get(key)
