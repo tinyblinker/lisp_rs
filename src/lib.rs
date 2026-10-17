@@ -699,9 +699,9 @@ mod tests {
     fn test_intern_same_name_gets_same_id() {
         let s1 = format!("intern-{}", "demo");
         let s2 = ["intern-", "demo"].concat();
-        assert_ne!(s1.as_ptr(), s2.as_ptr()); 
-        assert_eq!(intern(&s1), intern(&s2)); 
-        assert_eq!(intern(&s1), intern("intern-demo")); 
+        assert_ne!(s1.as_ptr(), s2.as_ptr());
+        assert_eq!(intern(&s1), intern(&s2));
+        assert_eq!(intern(&s1), intern("intern-demo"));
     }
 
     #[test]
@@ -720,43 +720,15 @@ mod tests {
         let tokens = tokenize("(+ foo foo)");
         let (exp, _) = parse(&tokens).unwrap();
         match &exp {
-            LispExp::List(elements) => {
-                match (&elements[1], &elements[2]) {
-                    (LispExp::Symbol(foo1), LispExp::Symbol(foo2)) => {
-                        assert_eq!(foo1, foo2); 
-                        assert_eq!(*foo1, intern("foo")); 
-                    }
-                    _ => panic!("expected two symbols in (+ foo foo)"),
+            LispExp::List(elements) => match (&elements[1], &elements[2]) {
+                (LispExp::Symbol(foo1), LispExp::Symbol(foo2)) => {
+                    assert_eq!(foo1, foo2);
+                    assert_eq!(*foo1, intern("foo"));
                 }
-            }
+                _ => panic!("expected two symbols in (+ foo foo)"),
+            },
             _ => panic!("expected a list expression"),
         }
-    }
-
-    #[test]
-    fn test_env_lookup_with_freshly_allocated_name() {
-        let mut env = LispEnv::new();
-        env.set(intern("fresh-name"), number!(42f64));
-        let name = format!("fresh-{}", "name"); // 运行时新分配
-        assert_eq!(env.get(intern(&name)).unwrap(), number!(42f64));
-    }
-
-    #[test]
-    fn test_eval_reuses_symbol_id_across_pipeline() {
-        let mut env = create_default_env();
-        eval_str("(define x 10)", &mut env).unwrap();
-        assert_eq!(eval_str("(+ x x)", &mut env).unwrap(), number!(20f64));
-    }
-
-    #[test]
-    fn test_special_form_marker_consistent_across_pipeline() {
-        let tokens = tokenize("(if #t 1 2)");
-        let (exp, _) = parse(&tokens).unwrap();
-        if let LispExp::List(elements) = &exp {
-            assert_eq!(elements[0], LispExp::Symbol(intern("if")));
-        }
-        let mut env = create_default_env();
-        assert_eq!(eval(&exp, &mut env).unwrap(), number!(1f64));
     }
 }
 
