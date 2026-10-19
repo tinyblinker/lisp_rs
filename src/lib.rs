@@ -82,14 +82,12 @@ pub enum LispErr {
     Reason(String), // error message
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
         env::LispEnv,
-        interpreter::eval,
+        interpreter::{create_default_env, eval},
         lexer::tokenize,
         parser::{parse, parse_atom},
     };
