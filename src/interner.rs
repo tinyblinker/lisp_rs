@@ -9,6 +9,22 @@ struct Interner {
     total_count: u64,
 }
 
+pub struct PredefinedSyms {
+    pub if_sym: u64,
+    pub define: u64,
+    pub lambda: u64,
+    pub begin: u64,
+}
+
+pub fn predefined() -> PredefinedSyms {
+    PredefinedSyms {
+        if_sym: intern("if"),
+        define: intern("define"),
+        lambda: intern("lambda"),
+        begin: intern("begin"),
+    }
+}
+
 impl Interner {
     pub fn new() -> Self {
         Interner {

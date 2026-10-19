@@ -1,4 +1,5 @@
 use crate::intern;
+use crate::interner::predefined;
 use crate::number;
 use crate::LispLambda;
 use crate::RefCell;
@@ -39,7 +40,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                 // -- "if" (tail position optimization) --
                 if let LispExp::Symbol(s) = &elements[0] {
                     // (if condition true_branch false_branch)
-                    if *s == intern("if") && elements.len() == 4 {
+                    if *s == predefined().if_sym && elements.len() == 4 {
                         let cond = eval(&elements[1], &mut current_env)?;
                         let is_true = !matches!(cond, LispExp::Bool(false) | LispExp::Nil);
                         // TCO!!!! do not recursively eval, update expression then continue
@@ -51,9 +52,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         continue;
                     }
                     // -- "define" (supports  recursive definition) --
-                    else if *s == intern("define") && elements.len() == 3 {
-                        println!("###[debug]elements = {:?};", elements);
-                        println!("###[debug]elements[1] = {:?};", elements[1]);
+                    else if *s == predefined().define && elements.len() == 3 {
                         // use "Rc" to share environment: let closures "sees" themselves
                         if let LispExp::Symbol(name) = &elements[1] {
                             let share_env = Rc::new(RefCell::new(std::mem::take(&mut current_env)));
@@ -78,7 +77,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         }
                     }
                     // -- lambda --
-                    else if *s == intern("lambda") && elements.len() >= 3 {
+                    else if *s == predefined().lambda && elements.len() >= 3 {
                         let params: Vec<u64> = match &elements[1] {
                             LispExp::List(param_list) => param_list
                                 .iter()
@@ -106,6 +105,18 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         }));
                         *env = current_env;
                         return Ok(lambda);
+                    } else if *s == predefined().begin {
+                        let args = &elements[1..];
+                        if args.is_empty() {
+                            return Ok(LispExp::Nil);
+                        }
+                        // eval all but last(for side effects)
+                        for arg in &args[..args.len() - 1] {
+                            eval(arg, &mut current_env)?;
+                        }
+                        // last expression is in tail position=>TCO
+                        current_exp = args.last().unwrap().clone();
+                        continue;
                     }
                 }
                 // -- Ordinary function call --

@@ -591,6 +591,13 @@ mod tests {
     fn test_tokenize_string_literal() {
         assert_eq!(tokenize("\"hello\""), vec!["\"hello\""]);
     }
+
+    #[test]
+    fn test_begin() {
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(begin 1 2 3)", &mut env).unwrap(), number!(3));
+        assert_eq!(eval_str("(begin)", &mut env).unwrap(), nil!());
+    }
 }
 
 /// eval_str() is the pipeline
@@ -599,7 +606,6 @@ mod tests {
 fn eval_str(source: &str, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
     // "Lexer" to tokenize the source code to tokens
     let tokens = tokenize(source);
-    println!("####[debug]tokens={:?};", tokens);
     // "Parser" to parse the tokens to AST
     let (exp, _) = parse(&tokens)?;
     // "Evaluator" to eval the AST
