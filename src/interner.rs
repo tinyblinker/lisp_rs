@@ -14,6 +14,7 @@ pub struct PredefinedSyms {
     pub define: u64,
     pub lambda: u64,
     pub begin: u64,
+    pub set_bang: u64,
 }
 
 pub fn predefined() -> PredefinedSyms {
@@ -22,6 +23,7 @@ pub fn predefined() -> PredefinedSyms {
         define: intern("define"),
         lambda: intern("lambda"),
         begin: intern("begin"),
+        set_bang: intern("set!"),
     }
 }
 
@@ -56,4 +58,12 @@ pub fn intern(s: &str) -> u64 {
         .unwrap();
     let id = interner.intern(s);
     id
+}
+
+pub fn lookup(id: u64) -> String {
+    let interner = INTERNER
+        .get_or_init(|| RwLock::new(Interner::new()))
+        .read()
+        .unwrap();
+    interner.id_to_str[id as usize].clone()
 }

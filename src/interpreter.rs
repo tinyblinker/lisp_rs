@@ -117,6 +117,18 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         // last expression is in tail position=>TCO
                         current_exp = args.last().unwrap().clone();
                         continue;
+                    } else if *s == predefined().set_bang {
+                        let args = &elements[1..];
+                        if args.len() != 2 {
+                            *env = current_env;
+                            return Err(LispErr::Reason("\'set!\' needs 2 arguments".into()));
+                        }
+                        if let LispExp::Symbol(name) = &args[0] {
+                            let value = eval(&args[1], &mut current_env)?;
+                            current_env.set_upward(*name, value)?;
+                            *env = current_env;
+                            return Ok(LispExp::Nil);
+                        }
                     }
                 }
                 // -- Ordinary function call --

@@ -598,6 +598,15 @@ mod tests {
         assert_eq!(eval_str("(begin 1 2 3)", &mut env).unwrap(), number!(3));
         assert_eq!(eval_str("(begin)", &mut env).unwrap(), nil!());
     }
+
+    #[test]
+    fn test_set_bang() {
+        let mut env = create_default_env();
+        eval_str("(define x 10)", &mut env).unwrap();
+        assert_eq!(eval_str("x", &mut env).unwrap(), number!(10));
+        eval_str("(set! x 20)", &mut env).unwrap();
+        assert_eq!(eval_str("x", &mut env).unwrap(), number!(20));
+    }
 }
 
 /// eval_str() is the pipeline

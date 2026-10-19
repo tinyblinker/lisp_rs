@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{LispErr, LispExp};
+use crate::{interner::lookup, LispErr, LispExp};
 
 /// environment: like an address book(key->value)
 #[derive(Clone, Debug, PartialEq, Default)]
@@ -37,6 +37,19 @@ impl LispEnv {
         LispEnv {
             data: HashMap::default(),
             outer: Some(outer),
+        }
+    }
+    pub fn set_upward(&mut self, key: u64, value: LispExp) -> Result<(), LispErr> {
+        if let Some(v) = self.data.get_mut(&key) {
+            *v = value;
+            return Ok(());
+        } else if let Some(outer) = &self.outer {
+            return outer.borrow_mut().set_upward(key, value);
+        } else {
+            return Err(LispErr::Reason(format!(
+                "set! failed: variable {} undefined",
+                lookup(key)
+            )));
         }
     }
 }
