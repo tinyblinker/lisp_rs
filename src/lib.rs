@@ -607,6 +607,16 @@ mod tests {
         eval_str("(set! x 20)", &mut env).unwrap();
         assert_eq!(eval_str("x", &mut env).unwrap(), number!(20));
     }
+
+    #[test]
+    fn test_let() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(let ((x 1) (y 2)) (+ x y))", &mut env).unwrap(),
+            number!(3)
+        );
+        assert_eq!(eval_str("(let () 42)", &mut env).unwrap(), number!(42));
+    }
 }
 
 /// eval_str() is the pipeline

@@ -129,6 +129,43 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             *env = current_env;
                             return Ok(LispExp::Nil);
                         }
+                    } else if *s == predefined().let_sym {
+                        let args = &elements[1..];
+                        // parse the binding list
+                        let bindings = &args[0];
+                        let body_exprs = &args[1..];
+                        let mut names: Vec<LispExp> = Vec::new();
+                        let mut vals: Vec<LispExp> = Vec::new();
+                        if let LispExp::List(binds) = bindings {
+                            for bind in binds {
+                                if let LispExp::List(one_bind) = bind {
+                                    if let LispExp::Symbol(one_name) = &one_bind[0] {
+                                        names.push(LispExp::Symbol(*one_name));
+                                        vals.push(one_bind[1].clone())
+                                    }
+                                }
+                            }
+                        }
+                        // body wrapping(multi-expression -> implicit begin)
+                        let body = if body_exprs.len() == 1 {
+                            body_exprs[0].clone()
+                        } else {
+                            LispExp::List(
+                                std::iter::once(LispExp::Symbol(predefined().begin))
+                                    .chain(body_exprs.iter().cloned())
+                                    .collect(),
+                            )
+                        };
+                        // conver to a lambda
+                        let lambda = LispExp::List(vec![
+                            LispExp::Symbol(predefined().lambda),
+                            LispExp::List(names),
+                            body,
+                        ]);
+                        let mut call = vec![lambda];
+                        call.extend(vals);
+                        current_exp = LispExp::List(call);
+                        continue;
                     }
                 }
                 // -- Ordinary function call --

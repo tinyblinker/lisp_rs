@@ -15,6 +15,7 @@ pub struct PredefinedSyms {
     pub lambda: u64,
     pub begin: u64,
     pub set_bang: u64,
+    pub let_sym: u64,
 }
 
 pub fn predefined() -> PredefinedSyms {
@@ -24,6 +25,7 @@ pub fn predefined() -> PredefinedSyms {
         lambda: intern("lambda"),
         begin: intern("begin"),
         set_bang: intern("set!"),
+        let_sym: intern("let"),
     }
 }
 
