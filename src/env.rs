@@ -30,7 +30,10 @@ impl LispEnv {
         } else if let Some(outer) = &self.outer {
             outer.borrow().get(key)
         } else {
-            Err(LispErr::Reason(format!("Undefined variable: {}", key)))
+            Err(LispErr::Reason(format!(
+                "Undefined variable: {}",
+                lookup(key)
+            )))
         }
     }
     pub fn with_outer(outer: Rc<RefCell<LispEnv>>) -> Self {

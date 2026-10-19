@@ -230,10 +230,7 @@ mod tests {
         let var = "a";
         assert_eq!(
             env.get(intern(var)),
-            Err(LispErr::Reason(format!(
-                "Undefined variable: {}",
-                intern(var)
-            )))
+            Err(LispErr::Reason(format!("Undefined variable: {}", var)))
         )
     }
 
@@ -627,6 +624,13 @@ mod tests {
         );
         // no match return nil
         assert_eq!(eval_str("(cond ((> 3 5) 1))", &mut env).unwrap(), nil!());
+    }
+
+    #[test]
+    fn test_and() {
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(and #t 42)", &mut env).unwrap(), number!(42));
+        assert_eq!(eval_str("(and #t #f)", &mut env).unwrap(), bool!(false));
     }
 }
 

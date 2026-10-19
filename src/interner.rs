@@ -17,6 +17,7 @@ pub struct PredefinedSyms {
     pub set_bang: u64,
     pub let_sym: u64,
     pub cond_sym: u64,
+    pub and_sym: u64,
 }
 
 pub fn predefined() -> PredefinedSyms {
@@ -28,6 +29,7 @@ pub fn predefined() -> PredefinedSyms {
         set_bang: intern("set!"),
         let_sym: intern("let"),
         cond_sym: intern("cond"),
+        and_sym: intern("and"),
     }
 }
 

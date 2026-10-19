@@ -106,9 +106,12 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         }));
                         *env = current_env;
                         return Ok(lambda);
-                    } else if *s == predefined().begin {
+                    }
+                    // -- begin --
+                    else if *s == predefined().begin {
                         let args = &elements[1..];
                         if args.is_empty() {
+                            *env = current_env;
                             return Ok(LispExp::Nil);
                         }
                         // eval all but last(for side effects)
@@ -118,7 +121,9 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         // last expression is in tail position=>TCO
                         current_exp = args.last().unwrap().clone();
                         continue;
-                    } else if *s == predefined().set_bang {
+                    }
+                    // -- set! --
+                    else if *s == predefined().set_bang {
                         let args = &elements[1..];
                         if args.len() != 2 {
                             *env = current_env;
@@ -130,7 +135,9 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             *env = current_env;
                             return Ok(LispExp::Nil);
                         }
-                    } else if *s == predefined().let_sym {
+                    }
+                    // -- let --
+                    else if *s == predefined().let_sym {
                         let args = &elements[1..];
                         // parse the binding list
                         let bindings = &args[0];
@@ -167,7 +174,9 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         call.extend(vals);
                         current_exp = LispExp::List(call);
                         continue;
-                    } else if *s == predefined().cond_sym {
+                    }
+                    // -- cond --
+                    else if *s == predefined().cond_sym {
                         let args = &elements[1..];
                         let mut new_expr: Option<LispExp> = None;
                         for branches in args {
@@ -207,6 +216,23 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         }
                         *env = current_env;
                         return Ok(LispExp::Nil);
+                    }
+                    // -- and --
+                    else if *s == predefined().and_sym {
+                        let args = &elements[1..];
+                        if args.is_empty() {
+                            *env = current_env;
+                            return Ok(LispExp::Bool(true));
+                        }
+                        for args in &args[..args.len() - 1] {
+                            let val = eval(args, &mut current_env)?;
+                            if matches!(val, LispExp::Bool(false) | LispExp::Nil) {
+                                *env = current_env;
+                                return Ok(val);
+                            }
+                        }
+                        current_exp = args.last().unwrap().clone(); // TCO for last
+                        continue;
                     }
                 }
                 // -- Ordinary function call --
