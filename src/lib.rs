@@ -617,6 +617,17 @@ mod tests {
         );
         assert_eq!(eval_str("(let () 42)", &mut env).unwrap(), number!(42));
     }
+
+    #[test]
+    fn test_cond() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(cond ((> 3 5) 1) ((< 3 5) 2) (else 3))", &mut env).unwrap(),
+            number!(2)
+        );
+        // no match return nil
+        assert_eq!(eval_str("(cond ((> 3 5) 1))", &mut env).unwrap(), nil!());
+    }
 }
 
 /// eval_str() is the pipeline

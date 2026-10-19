@@ -1,4 +1,5 @@
 use crate::intern;
+use crate::interner::lookup;
 use crate::interner::predefined;
 use crate::number;
 use crate::LispLambda;
@@ -156,7 +157,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                                     .collect(),
                             )
                         };
-                        // conver to a lambda
+                        // convert to a lambda
                         let lambda = LispExp::List(vec![
                             LispExp::Symbol(predefined().lambda),
                             LispExp::List(names),
@@ -166,6 +167,46 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         call.extend(vals);
                         current_exp = LispExp::List(call);
                         continue;
+                    } else if *s == predefined().cond_sym {
+                        let args = &elements[1..];
+                        let mut new_expr: Option<LispExp> = None;
+                        for branches in args {
+                            if let LispExp::List(branch) = branches {
+                                if branch.is_empty() {
+                                    continue;
+                                }
+                                let conditon = &branch[0];
+                                let body = &branch[1..];
+                                let is_else = matches!(conditon, LispExp::Symbol(symbol_id) if lookup(*symbol_id) == "else");
+                                let passed = is_else || {
+                                    let val = eval(conditon, &mut current_env)?;
+                                    !matches!(val, LispExp::Nil | LispExp::Bool(false))
+                                };
+                                if passed {
+                                    if body.is_empty() {
+                                        *env = current_env;
+                                        return Ok(LispExp::Nil);
+                                    }
+                                    // TCO: execute body
+                                    new_expr = Some(if body.len() == 1 {
+                                        body[0].clone()
+                                    } else {
+                                        LispExp::List(
+                                            std::iter::once(LispExp::Symbol(predefined().begin))
+                                                .chain(body.iter().cloned())
+                                                .collect(),
+                                        )
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                        if let Some(expr) = new_expr {
+                            current_exp = expr;
+                            continue;
+                        }
+                        *env = current_env;
+                        return Ok(LispExp::Nil);
                     }
                 }
                 // -- Ordinary function call --
