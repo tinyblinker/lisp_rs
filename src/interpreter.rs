@@ -234,6 +234,25 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         current_exp = args.last().unwrap().clone(); // TCO for last
                         continue;
                     }
+                    // -- or --
+                    else if *s == predefined().or_sym {
+                        let args = &elements[1..];
+                        if args.is_empty() {
+                            *env = current_env;
+                            return Ok(LispExp::Bool(false));
+                        }
+                        for arg in &args[..args.len() - 1] {
+                            let val = eval(arg, &mut current_env)?;
+                            if !matches!(val, LispExp::Nil | LispExp::Bool(false)) {
+                                *env = current_env;
+                                return Ok(val);
+                            }
+                        }
+                        // TCO
+                        current_exp = args.last().unwrap().clone();
+                        continue;
+                    }
+                    // -- let* --
                 }
                 // -- Ordinary function call --
                 let func = eval(&elements[0], &mut current_env)?;

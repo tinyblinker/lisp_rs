@@ -631,6 +631,16 @@ mod tests {
         let mut env = create_default_env();
         assert_eq!(eval_str("(and #t 42)", &mut env).unwrap(), number!(42));
         assert_eq!(eval_str("(and #t #f)", &mut env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(and #t #t 42)", &mut env).unwrap(), number!(42));
+        assert_eq!(eval_str("(and )", &mut env).unwrap(), bool!(true));
+    }
+
+    #[test]
+    fn test_or() {
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(or #f #f 42)", &mut env).unwrap(), number!(42));
+        assert_eq!(eval_str("(or #f #f #t)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(or )", &mut env).unwrap(), bool!(false));
     }
 }
 
