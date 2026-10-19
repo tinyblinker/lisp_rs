@@ -309,14 +309,14 @@ mod tests {
 
     #[test]
     fn test_parse_symbol_atom() {
-        let tokens = vec!["+".to_string()];
+        let tokens = vec!["+"];
         let (exp, _) = parse(&tokens).unwrap();
         assert_eq!(exp, LispExp::Symbol(intern("+")));
     }
 
     #[test]
     fn test_parse_number_atom() {
-        let tokens = vec!["32".to_string()];
+        let tokens = vec!["32"];
         let (exp, _) = parse(&tokens).unwrap();
         assert_eq!(exp, LispExp::Number(32f64));
     }
@@ -331,7 +331,7 @@ mod tests {
     #[test]
     fn test_recursive_parser() {
         let tokens = [
-            "(".to_string(),
+            "(".into(),
             "+".into(),
             "1".into(),
             "(".into(),
@@ -355,7 +355,7 @@ mod tests {
     #[test]
     fn test_unclosed_list_error() {
         assert_eq!(
-            parse(&["(".to_string(), "+".into(), "1".into()]),
+            parse(&["(".into(), "+".into(), "1".into()]),
             Err(LispErr::Reason("Missing \')\'".to_string()))
         );
     }
@@ -363,7 +363,7 @@ mod tests {
     #[test]
     fn test_unexpected_closed_list_error() {
         assert_eq!(
-            parse(&[")".to_string()]),
+            parse(&[")".into()]),
             Err(LispErr::Reason("Extra \')\'".to_string()))
         );
     }
@@ -730,6 +730,28 @@ mod tests {
             _ => panic!("expected a list expression"),
         }
     }
+
+    #[test]
+    fn test_tokenize_empty() {
+        let result = tokenize("");
+        assert!(
+            result.is_empty(),
+            "empty string should return empty token list, not panic"
+        )
+    }
+
+    #[test]
+    fn test_tokenize_comment() {
+        assert_eq!(
+            tokenize("(+ 1 2) ; this is the comment"),
+            vec!["(", "+", "1", "2", ")"]
+        );
+    }
+
+    #[test]
+    fn test_tokenize_string_literal() {
+        assert_eq!(tokenize("\"hello\""), vec!["\"hello\""]);
+    }
 }
 
 /// eval() is the "Evaluator"
@@ -873,6 +895,7 @@ fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
 fn eval_str(source: &str, mut env: &mut LispEnv) -> Result<LispExp, LispErr> {
     // "Lexer" to tokenize the source code to tokens
     let tokens = tokenize(source);
+    println!("####[debug]tokens={:?};", tokens);
     // "Parser" to parse the tokens to AST
     let (exp, _) = parse(&tokens)?;
     // "Evaluator" to eval the AST

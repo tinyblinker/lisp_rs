@@ -2,14 +2,14 @@ use crate::{interner::intern, LispErr, LispExp};
 
 /// parse() is the "Parser"'s main
 #[allow(dead_code)]
-pub fn parse(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
+pub fn parse<'a>(tokens: &'a [&'a str]) -> Result<(LispExp, &'a [&'a str]), LispErr> {
     // get just the first token
     let (token, rest_tokens) = tokens
         .split_first()
         .ok_or(LispErr::Reason("parse():No token left".into()))?;
 
     // match the first "token"
-    match token.as_str() {
+    match *token {
         "(" => read_seq(rest_tokens),
         ")" => Err(LispErr::Reason("Extra \')\'".into())),
         _ => Ok((parse_atom(token), rest_tokens)),
@@ -17,17 +17,16 @@ pub fn parse(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
 }
 
 /// Read a list: start after the left parenthesis, end when encountering )
-fn read_seq(tokens: &[String]) -> Result<(LispExp, &[String]), LispErr> {
+fn read_seq<'a>(tokens: &'a [&'a str]) -> Result<(LispExp, &'a [&'a str]), LispErr> {
     // create a Vector for holding the list_elements
     let mut list_elements: Vec<LispExp> = Vec::new();
     let mut tokens_left = tokens;
-
     loop {
         let (token, rest_tokens_a) = tokens_left
             .split_first()
             .ok_or(LispErr::Reason("Missing \')\'".to_string()))?;
         // if encounter the ')' then return the list and the rest_tokens immediately
-        if token == ")" {
+        if *token == ")" {
             return Ok((LispExp::List(list_elements), rest_tokens_a));
         }
         let (exp, rest_tokens_b) = parse(tokens_left)?;
