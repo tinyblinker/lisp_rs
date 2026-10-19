@@ -19,6 +19,7 @@ pub struct PredefinedSyms {
     pub cond_sym: u64,
     pub and_sym: u64,
     pub or_sym: u64,
+    pub let_star: u64,
 }
 
 pub fn predefined() -> PredefinedSyms {
@@ -32,6 +33,7 @@ pub fn predefined() -> PredefinedSyms {
         cond_sym: intern("cond"),
         and_sym: intern("and"),
         or_sym: intern("or"),
+        let_star: intern("let*"),
     }
 }
 

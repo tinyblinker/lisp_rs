@@ -642,6 +642,21 @@ mod tests {
         assert_eq!(eval_str("(or #f #f #t)", &mut env).unwrap(), bool!(true));
         assert_eq!(eval_str("(or )", &mut env).unwrap(), bool!(false));
     }
+
+    #[test]
+    fn test_let_star() {
+        let mut env = create_default_env();
+        // y can see x: this is the key difference from let
+        assert_eq!(
+            eval_str("(let* ((x 1) (y (+ x 1))) (+ x y))", &mut env).unwrap(),
+            number!(3)
+        );
+        // three-level sequential binding
+        assert_eq!(
+            eval_str("(let* ((a 1) (b (+ a 1)) (c (+ b 1))) c)", &mut env).unwrap(),
+            number!(3)
+        );
+    }
 }
 
 /// eval_str() is the pipeline

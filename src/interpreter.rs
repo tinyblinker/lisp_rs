@@ -253,6 +253,51 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         continue;
                     }
                     // -- let* --
+                    else if *s == predefined().let_star {
+                        let args = &elements[1..];
+                        let bindings = &args[0];
+                        let body_exprs = &args[1..];
+                        // parse the binding lists
+                        let binds: Vec<&LispExp> = if let LispExp::List(the_binds) = bindings {
+                            the_binds.iter().collect()
+                        } else {
+                            vec![]
+                        };
+                        // parse the body to eval
+                        let body = if body_exprs.len() == 1 {
+                            body_exprs[0].clone()
+                        } else {
+                            LispExp::List(
+                                std::iter::once(LispExp::Symbol(predefined().begin))
+                                    .chain(body_exprs.iter().cloned())
+                                    .collect(),
+                            )
+                        };
+                        // make embebbed 'let'
+                        let mut result = body.clone();
+                        for bind in binds.iter().rev() {
+                            if let LispExp::List(the_bind) = bind {
+                                if the_bind.len() >= 2 {
+                                    if let LispExp::Symbol(symbol_name) = &the_bind[0] {
+                                        let val = the_bind[1].clone();
+                                        result = LispExp::List(vec![
+                                            LispExp::Symbol(predefined().let_sym),
+                                            LispExp::List(vec![LispExp::List(vec![
+                                                LispExp::Symbol(*symbol_name),
+                                                val,
+                                            ])]),
+                                            result,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+                        if binds.is_empty() {
+                            result = body;
+                        }
+                        current_exp = result;
+                        continue; // TCO!
+                    }
                 }
                 // -- Ordinary function call --
                 let func = eval(&elements[0], &mut current_env)?;
