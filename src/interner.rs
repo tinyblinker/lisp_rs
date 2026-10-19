@@ -4,25 +4,28 @@ use std::{
 };
 
 struct Interner {
-    strings: HashMap<String, u64>,
-    counter: u64,
+    str_to_id: HashMap<String, u64>,
+    id_to_str: Vec<String>,
+    total_count: u64,
 }
 
 impl Interner {
     pub fn new() -> Self {
         Interner {
-            strings: HashMap::new(),
-            counter: 0,
+            str_to_id: HashMap::new(),
+            id_to_str: Vec::new(),
+            total_count: 0,
         }
     }
 
     pub fn intern(&mut self, s: &str) -> u64 {
-        if let Some(&id) = self.strings.get(s) {
+        if let Some(&id) = self.str_to_id.get(s) {
             id
         } else {
-            let id = self.counter.clone();
-            self.strings.insert(s.to_string(), id);
-            self.counter = self.counter + 1;
+            let id = self.id_to_str.len() as u64;
+            self.str_to_id.insert(s.to_string(), id);
+            self.id_to_str.push(s.to_string());
+            self.total_count += 1;
             id
         }
     }
