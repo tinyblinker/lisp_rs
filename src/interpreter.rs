@@ -862,5 +862,28 @@ pub fn create_default_env() -> LispEnv {
             )));
         }),
     );
+    // "eq?" function
+    env.set(
+        intern("eq?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(&args[0] == &args[1]));
+        }),
+    );
+    // "equal?" function
+    env.set(
+        intern("equal?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(equal_helper(&args[0], &args[1])));
+        }),
+    );
     env
+}
+
+fn equal_helper(expr_a: &LispExp, expr_b: &LispExp) -> bool {
+    match (expr_a, expr_b) {
+        (LispExp::List(x), LispExp::List(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(m, n)| equal_helper(m, n))
+        }
+        (x, y) => x == y,
+    }
 }

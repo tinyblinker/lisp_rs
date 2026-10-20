@@ -1,5 +1,3 @@
-use crate::parser::parse;
-
 /// tokenize() is the "Lexer"
 /// break src strs into tokens
 pub fn tokenize(input: &str) -> Vec<&str> {

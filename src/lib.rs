@@ -930,6 +930,27 @@ mod tests {
             LispExp::Bool(true)
         );
     }
+
+    #[test]
+    fn test_eq_equal() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(eq? 'x 'x)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(eq? 1 1)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(equal? (list 1 (list 2)) (list 1 (list 2)))", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(equal? (list 1 2) (list 1 3))", &mut env).unwrap(),
+            LispExp::Bool(false)
+        );
+    }
 }
 
 /// eval_str() is the pipeline
