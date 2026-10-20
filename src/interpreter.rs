@@ -544,5 +544,10 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "list" function
+    env.set(
+        intern("list"),
+        LispExp::Func(|args| Ok(LispExp::List(args.to_vec()))),
+    );
     env
 }

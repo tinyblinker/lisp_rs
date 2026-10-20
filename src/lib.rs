@@ -698,6 +698,15 @@ mod tests {
         assert_eq!(eval_str("(not nil)", &mut env).unwrap(), bool!(true));
         assert_eq!(eval_str("(not 0)", &mut env).unwrap(), bool!(false));
     }
+
+    #[test]
+    fn test_list() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(list 1 2 3)", &mut env).unwrap(),
+            list!(vec![number!(1), number!(2), number!(3)])
+        );
+    }
 }
 
 /// eval_str() is the pipeline
