@@ -756,5 +756,10 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "null?" function
+    env.set(
+        intern("null?"),
+        LispExp::Func(|args| Ok(LispExp::Bool(matches!(args[0], LispExp::Nil)))),
+    );
     env
 }

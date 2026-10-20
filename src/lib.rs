@@ -855,6 +855,14 @@ mod tests {
             bool!(false)
         );
     }
+
+    #[test]
+    fn test_null_check() {
+        let mut env = create_default_env();
+        // only 'nil' is null
+        assert_eq!(eval_str("(null? nil)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(null? 0)", &mut env).unwrap(), bool!(false));
+    }
 }
 
 /// eval_str() is the pipeline
