@@ -672,6 +672,22 @@ mod tests {
             bool!(true)
         );
     }
+
+    #[test]
+    fn test_letrec_nil() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str(
+                "(let ((x 42))
+                  (letrec ((y x)
+                          (x 1))
+                 y))",
+                &mut env
+            )
+            .unwrap(),
+            nil!()
+        );
+    }
 }
 
 /// eval_str() is the pipeline
