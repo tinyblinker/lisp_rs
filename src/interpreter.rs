@@ -549,5 +549,20 @@ pub fn create_default_env() -> LispEnv {
         intern("list"),
         LispExp::Func(|args| Ok(LispExp::List(args.to_vec()))),
     );
+    // "cons" function
+    env.set(
+        intern("cons"),
+        LispExp::Func(|args| match &args[1] {
+            LispExp::List(els) => {
+                let mut new_list = vec![args[0].clone()];
+                new_list.extend(els.clone());
+                Ok(LispExp::List(new_list))
+            }
+            LispExp::Nil => Ok(LispExp::List(vec![args[0].clone()])),
+            _ => Err(LispErr::Reason(
+                "\'cons\' second argument must be a list".into(),
+            )),
+        }),
+    );
     env
 }

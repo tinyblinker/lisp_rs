@@ -707,6 +707,15 @@ mod tests {
             list!(vec![number!(1), number!(2), number!(3)])
         );
     }
+
+    #[test]
+    fn test_cons() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(cons 0 (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![number!(0), number!(1), number!(2), number!(3)])
+        );
+    }
 }
 
 /// eval_str() is the pipeline
