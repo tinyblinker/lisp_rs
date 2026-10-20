@@ -564,5 +564,31 @@ pub fn create_default_env() -> LispEnv {
             )),
         }),
     );
+    // "car" function
+    env.set(
+        intern("car"),
+        LispExp::Func(|args| match &args[0] {
+            LispExp::List(list_content) => Ok(list_content[0].clone()),
+            LispExp::Nil => Err(LispErr::Reason(
+                "\'car\' only receives \'LispExp::List\' as the arg".into(),
+            )),
+            _ => Err(LispErr::Reason(
+                "\'car\' only receives \'LispExp::List\' as the arg".into(),
+            )),
+        }),
+    );
+    // "cdr" function
+    env.set(
+        intern("cdr"),
+        LispExp::Func(|args| match &args[0] {
+            LispExp::List(list_content) => Ok(LispExp::List(list_content[1..].to_vec())),
+            LispExp::Nil => Err(LispErr::Reason(
+                "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
+            )),
+            _ => Err(LispErr::Reason(
+                "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
+            )),
+        }),
+    );
     env
 }

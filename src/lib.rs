@@ -716,6 +716,31 @@ mod tests {
             list!(vec![number!(0), number!(1), number!(2), number!(3)])
         );
     }
+
+    #[test]
+    fn test_car_cdr() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(car (list 1 2 3))", &mut env).unwrap(),
+            number!(1)
+        );
+        assert_eq!(
+            eval_str("(cdr (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![number!(2), number!(3)])
+        );
+        assert_eq!(
+            eval_str("(car nil)", &mut env),
+            Err(LispErr::Reason(
+                "\'car\' only receives \'LispExp::List\' as the arg".into(),
+            ))
+        );
+        assert_eq!(
+            eval_str("(cdr nil)", &mut env),
+            Err(LispErr::Reason(
+                "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
+            )),
+        );
+    }
 }
 
 /// eval_str() is the pipeline
