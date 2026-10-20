@@ -567,27 +567,109 @@ pub fn create_default_env() -> LispEnv {
     // "car" function
     env.set(
         intern("car"),
-        LispExp::Func(|args| match &args[0] {
-            LispExp::List(list_content) => Ok(list_content[0].clone()),
-            LispExp::Nil => Err(LispErr::Reason(
-                "\'car\' only receives \'LispExp::List\' as the arg".into(),
-            )),
-            _ => Err(LispErr::Reason(
-                "\'car\' only receives \'LispExp::List\' as the arg".into(),
-            )),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'car\' have no arg".into()));
+            };
+            match &args[0] {
+                LispExp::List(list_content) => {
+                    if list_content.is_empty() {
+                        return Err(LispErr::Reason(
+                            "\'car\' cannot receives empty \'LispExp::List\' as the arg".into(),
+                        ));
+                    }
+                    Ok(list_content[0].clone())
+                }
+                LispExp::Nil => Err(LispErr::Reason(
+                    "\'car\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+                _ => Err(LispErr::Reason(
+                    "\'car\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+            }
         }),
     );
     // "cdr" function
     env.set(
         intern("cdr"),
-        LispExp::Func(|args| match &args[0] {
-            LispExp::List(list_content) => Ok(LispExp::List(list_content[1..].to_vec())),
-            LispExp::Nil => Err(LispErr::Reason(
-                "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
-            )),
-            _ => Err(LispErr::Reason(
-                "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
-            )),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'cdr\' have no arg".into()));
+            };
+            match &args[0] {
+                LispExp::List(list_content) => {
+                    if list_content.is_empty() {
+                        return Err(LispErr::Reason(
+                            "\'cdr\' cannot receives empty \'LispExp::List\' as the arg".into(),
+                        ));
+                    }
+                    Ok(LispExp::List(list_content[1..].to_vec()))
+                }
+                LispExp::Nil => Err(LispErr::Reason(
+                    "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+                _ => Err(LispErr::Reason(
+                    "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+            }
+        }),
+    );
+    // "cadr" function
+    env.set(
+        intern("cadr"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'cadr\' have no arg".into()));
+            };
+            match &args[0] {
+                LispExp::List(list_content) => {
+                    if list_content.len() == 0 {
+                        return Err(LispErr::Reason(
+                            "\'cadr\' cannot receives empty \'LispExp::List\' as the arg".into(),
+                        ));
+                    } else if list_content.len() == 1 {
+                        return Err(LispErr::Reason(
+                            "\'cadr\' find the \'LispExp::List\' is too short".into(),
+                        ));
+                    }
+                    Ok(list_content[1].clone())
+                }
+                LispExp::Nil => Err(LispErr::Reason(
+                    "\'cadr\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+                _ => Err(LispErr::Reason(
+                    "\'cadr\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+            }
+        }),
+    );
+    // "caddr" function
+    env.set(
+        intern("caddr"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'caddr\' have no arg".into()));
+            };
+            match &args[0] {
+                LispExp::List(list_content) => {
+                    if list_content.len() == 0 {
+                        return Err(LispErr::Reason(
+                            "\'caddr\' cannot receives empty \'LispExp::List\' as the arg".into(),
+                        ));
+                    } else if list_content.len() <= 2 {
+                        return Err(LispErr::Reason(
+                            "\'caddr\' find the \'LispExp::List\' is too short".into(),
+                        ));
+                    }
+                    Ok(list_content[2].clone())
+                }
+                LispExp::Nil => Err(LispErr::Reason(
+                    "\'caddr\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+                _ => Err(LispErr::Reason(
+                    "\'caddr\' only receives \'LispExp::List\' as the arg".into(),
+                )),
+            }
         }),
     );
     env

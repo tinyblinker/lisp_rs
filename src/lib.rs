@@ -725,8 +725,14 @@ mod tests {
             number!(1)
         );
         assert_eq!(
-            eval_str("(cdr (list 1 2 3))", &mut env).unwrap(),
-            list!(vec![number!(2), number!(3)])
+            eval_str("(car )", &mut env),
+            Err(LispErr::Reason("\'car\' have no arg".into()))
+        );
+        assert_eq!(
+            eval_str("(car (list))", &mut env),
+            Err(LispErr::Reason(
+                "\'car\' cannot receives empty \'LispExp::List\' as the arg".into(),
+            ))
         );
         assert_eq!(
             eval_str("(car nil)", &mut env),
@@ -734,10 +740,71 @@ mod tests {
                 "\'car\' only receives \'LispExp::List\' as the arg".into(),
             ))
         );
+        // ----------------------------------------------
+        assert_eq!(
+            eval_str("(cdr (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![number!(2), number!(3)])
+        );
+        assert_eq!(
+            eval_str("(cdr )", &mut env),
+            Err(LispErr::Reason("\'cdr\' have no arg".into()))
+        );
+        assert_eq!(
+            eval_str("(cdr (list))", &mut env),
+            Err(LispErr::Reason(
+                "\'cdr\' cannot receives empty \'LispExp::List\' as the arg".into(),
+            ))
+        );
         assert_eq!(
             eval_str("(cdr nil)", &mut env),
             Err(LispErr::Reason(
                 "\'cdr\' only receives \'LispExp::List\' as the arg".into(),
+            )),
+        );
+    }
+
+    #[test]
+    fn test_cadr_caddr() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(cadr (list 1 2 3))", &mut env).unwrap(),
+            number!(2)
+        );
+        assert_eq!(
+            eval_str("(cadr )", &mut env),
+            Err(LispErr::Reason("\'cadr\' have no arg".into()))
+        );
+        assert_eq!(
+            eval_str("(cadr (list))", &mut env),
+            Err(LispErr::Reason(
+                "\'cadr\' cannot receives empty \'LispExp::List\' as the arg".into(),
+            ))
+        );
+        assert_eq!(
+            eval_str("(cadr nil)", &mut env),
+            Err(LispErr::Reason(
+                "\'cadr\' only receives \'LispExp::List\' as the arg".into(),
+            )),
+        );
+        // -----------------------------------------------------
+        assert_eq!(
+            eval_str("(caddr (list 1 2 3))", &mut env).unwrap(),
+            number!(3)
+        );
+        assert_eq!(
+            eval_str("(caddr )", &mut env),
+            Err(LispErr::Reason("\'caddr\' have no arg".into()))
+        );
+        assert_eq!(
+            eval_str("(caddr (list))", &mut env),
+            Err(LispErr::Reason(
+                "\'caddr\' cannot receives empty \'LispExp::List\' as the arg".into(),
+            ))
+        );
+        assert_eq!(
+            eval_str("(caddr nil)", &mut env),
+            Err(LispErr::Reason(
+                "\'caddr\' only receives \'LispExp::List\' as the arg".into(),
             )),
         );
     }
