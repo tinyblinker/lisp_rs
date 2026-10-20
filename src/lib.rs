@@ -832,6 +832,16 @@ mod tests {
         assert_eq!(eval_str("(length nil)", &mut env).unwrap(), number!(0));
         assert_eq!(eval_str("(length (list))", &mut env).unwrap(), number!(0));
     }
+
+    #[test]
+    fn test_reverse() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(reverse (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![number!(3), number!(2), number!(1)])
+        );
+        assert_eq!(eval_str("(reverse nil)", &mut env).unwrap(), LispExp::Nil);
+    }
 }
 
 /// eval_str() is the pipeline

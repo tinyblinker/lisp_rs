@@ -714,5 +714,23 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "reverse" function
+    env.set(
+        intern("reverse"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'reverse\' have no args".into()));
+            };
+            match &args[0] {
+                LispExp::List(x) => {
+                    let mut y = x.clone();
+                    y.reverse();
+                    Ok(LispExp::List(y))
+                }
+                LispExp::Nil => Ok(LispExp::Nil),
+                _ => todo!(),
+            }
+        }),
+    );
     env
 }
