@@ -808,6 +808,19 @@ mod tests {
             )),
         );
     }
+
+    #[test]
+    fn test_append() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(append (list 1) (list 2 3))", &mut env).unwrap(),
+            list!(vec![number!(1), number!(2), number!(3)])
+        );
+        assert_eq!(
+            eval_str("(append nil (list 1))", &mut env).unwrap(),
+            list!(vec![number!(1)])
+        );
+    }
 }
 
 /// eval_str() is the pipeline

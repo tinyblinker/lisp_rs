@@ -672,5 +672,31 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "append" function
+    env.set(
+        intern("append"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'append\' have no arg".into()));
+            }
+            let mut new_vec: Vec<LispExp> = Vec::new();
+            let _ = args.iter().try_for_each(|x| {
+                Ok(match x {
+                    LispExp::List(x) => {
+                        for exp in x {
+                            new_vec.push(exp.clone());
+                        }
+                    }
+                    LispExp::Nil => (),
+                    _ => {
+                        return Err(LispErr::Reason(
+                            "\'append\' only receive \'LispExp::List\' as arg(s)".into(),
+                        ));
+                    }
+                })
+            });
+            Ok(LispExp::List(new_vec))
+        }),
+    );
     env
 }
