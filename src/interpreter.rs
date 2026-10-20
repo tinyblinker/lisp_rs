@@ -298,6 +298,12 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         current_exp = result;
                         continue; // TCO!
                     }
+                    // -- quote --
+                    else if *s == predefined().quote_sym {
+                        let args = &elements[1..];
+                        *env = current_env;
+                        return Ok(args[0].clone());
+                    }
                     // -- letrec --
                     else if *s == predefined().let_rec {
                         let args = &elements[1..];
@@ -773,7 +779,9 @@ pub fn create_default_env() -> LispEnv {
                     return Ok(LispExp::Nil);
                 }
                 _ => {
-                    return Err(LispErr::Reason("\'map\' second argument must be a list".into()));
+                    return Err(LispErr::Reason(
+                        "\'map\' second argument must be a list".into(),
+                    ));
                 }
             };
             let mut res = Vec::new();
@@ -795,6 +803,63 @@ pub fn create_default_env() -> LispEnv {
                 }
             }
             Ok(LispExp::List(res))
+        }),
+    );
+    // "number?" function
+    env.set(
+        intern("number?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(matches!(args[0], LispExp::Number(_))));
+        }),
+    );
+    // "symbol?" function
+    env.set(
+        intern("symbol?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(matches!(args[0], LispExp::Symbol(_))));
+        }),
+    );
+    // "boolean?" function
+    env.set(
+        intern("boolean?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(matches!(args[0], LispExp::Bool(_))));
+        }),
+    );
+    // "string?" function
+    env.set(
+        intern("string?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(matches!(args[0], LispExp::String(_))));
+        }),
+    );
+    // "string?" function
+    env.set(
+        intern("procedure?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(matches!(
+                args[0],
+                LispExp::Func(_) | LispExp::Lambda(_)
+            )));
+        }),
+    );
+    // "pair?" function
+    env.set(
+        intern("pair?"),
+        LispExp::Func(|args| {
+            Ok(LispExp::Bool(
+                matches!(&args[0], LispExp::List(els) if !els.is_empty()),
+            ))
+        }),
+    );
+    // "list?" function
+    env.set(
+        intern("list?"),
+        LispExp::Func(|args| {
+            return Ok(LispExp::Bool(matches!(
+                &args[0],
+                LispExp::List(_) | LispExp::Nil
+            )));
         }),
     );
     env

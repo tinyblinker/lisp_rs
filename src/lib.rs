@@ -877,6 +877,59 @@ mod tests {
             list!(vec![number!(2), number!(4), number!(6)])
         );
     }
+
+    #[test]
+    fn test_type_predicates() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(null? nil)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(null? 0)", &mut env).unwrap(),
+            LispExp::Bool(false)
+        );
+        assert_eq!(
+            eval_str("(number? 42)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(number? \"hello\")", &mut env).unwrap(),
+            LispExp::Bool(false)
+        );
+        assert_eq!(
+            eval_str("(symbol? 'x)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(boolean? #t)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(string? \"hi\")", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(procedure? +)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(pair? (list 1))", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(pair? nil)", &mut env).unwrap(),
+            LispExp::Bool(false)
+        );
+        assert_eq!(
+            eval_str("(list? (list 1 2))", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+        assert_eq!(
+            eval_str("(list? nil)", &mut env).unwrap(),
+            LispExp::Bool(true)
+        );
+    }
 }
 
 /// eval_str() is the pipeline

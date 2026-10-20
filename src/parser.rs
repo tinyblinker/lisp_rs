@@ -12,6 +12,13 @@ pub fn parse<'a>(tokens: &'a [&'a str]) -> Result<(LispExp, &'a [&'a str]), Lisp
     match *token {
         "(" => read_seq(rest_tokens),
         ")" => Err(LispErr::Reason("Extra \')\'".into())),
+        "'" => {
+            let (quoted, the_rest) = parse(rest_tokens)?;
+            Ok((
+                LispExp::List(vec![LispExp::Symbol(intern("quote")), quoted]),
+                the_rest,
+            ))
+        }
         _ => Ok((parse_atom(token), rest_tokens)),
     }
 }
