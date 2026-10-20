@@ -842,6 +842,19 @@ mod tests {
         );
         assert_eq!(eval_str("(reverse nil)", &mut env).unwrap(), LispExp::Nil);
     }
+
+    #[test]
+    fn test_member() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(member 2 (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![number!(2), number!(3)])
+        );
+        assert_eq!(
+            eval_str("(member 5 (list 1 2 3))", &mut env).unwrap(),
+            bool!(false)
+        );
+    }
 }
 
 /// eval_str() is the pipeline

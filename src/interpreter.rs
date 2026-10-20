@@ -732,5 +732,29 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "member" function
+    env.set(
+        intern("member"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'member\' have no args".into()));
+            };
+            match &args[1] {
+                LispExp::List(contents) => {
+                    for (i, c) in contents.iter().enumerate() {
+                        if c == &args[0] {
+                            return Ok(LispExp::List(contents[i..].to_vec()));
+                        }
+                    }
+                    return Ok(LispExp::Bool(false));
+                }
+                _ => {
+                    return Err(LispErr::Reason(
+                        "\'member\' only receive \'LispExp::List\'".into(),
+                    ));
+                }
+            }
+        }),
+    );
     env
 }
