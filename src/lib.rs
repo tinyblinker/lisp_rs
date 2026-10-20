@@ -691,9 +691,12 @@ mod tests {
 
     #[test]
     fn test_not() {
+        // only #f and nil are "false"
         let mut env = create_default_env();
         assert_eq!(eval_str("(not #t)", &mut env).unwrap(), bool!(false));
         assert_eq!(eval_str("(not #f)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(not nil)", &mut env).unwrap(), bool!(true));
+        assert_eq!(eval_str("(not 0)", &mut env).unwrap(), bool!(false));
     }
 }
 
