@@ -863,6 +863,20 @@ mod tests {
         assert_eq!(eval_str("(null? nil)", &mut env).unwrap(), bool!(true));
         assert_eq!(eval_str("(null? 0)", &mut env).unwrap(), bool!(false));
     }
+
+    #[test]
+    fn test_map() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(map (lambda (x) (+ x 1)) (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![number!(2), number!(3), number!(4)])
+        );
+        eval_str("(define my_foo (lambda (x) (* x 2)))", &mut env).unwrap();
+        assert_eq!(
+            eval_str("(map my_foo (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![number!(2), number!(4), number!(6)])
+        );
+    }
 }
 
 /// eval_str() is the pipeline

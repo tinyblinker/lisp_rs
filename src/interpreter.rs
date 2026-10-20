@@ -761,5 +761,41 @@ pub fn create_default_env() -> LispEnv {
         intern("null?"),
         LispExp::Func(|args| Ok(LispExp::Bool(matches!(args[0], LispExp::Nil)))),
     );
+    // "map" function
+    env.set(
+        intern("map"),
+        LispExp::Func(|args| {
+            // take args[0] as function
+            let func = &args[0];
+            let list = match &args[1] {
+                LispExp::List(els) => els,
+                LispExp::Nil => {
+                    return Ok(LispExp::Nil);
+                }
+                _ => {
+                    return Err(LispErr::Reason("\'map\' second argument must be a list".into()));
+                }
+            };
+            let mut res = Vec::new();
+            for el in list {
+                match func {
+                    LispExp::Func(f) => res.push(f(&[el.clone()])?),
+                    LispExp::Lambda(lam) => {
+                        let mut env = LispEnv::with_outer(lam.env.clone());
+                        if let Some(p) = lam.params.first() {
+                            env.set(*p, el.clone());
+                        }
+                        res.push(eval(&lam.body, &mut env)?);
+                    }
+                    _ => {
+                        return Err(LispErr::Reason(
+                            "\'map\' first argument must be a function".into(),
+                        ))
+                    }
+                }
+            }
+            Ok(LispExp::List(res))
+        }),
+    );
     env
 }
