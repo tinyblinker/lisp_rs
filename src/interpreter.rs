@@ -523,6 +523,14 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "not" function
+    env.set(
+        intern("not"),
+        LispExp::Func(|args| match &args[0] {
+            LispExp::Nil | LispExp::Bool(false) => Ok(LispExp::Bool(true)),
+            _ => Ok(LispExp::Bool(false)),
+        }),
+    );
     // "string-length" function
     env.set(
         intern("string-length"),

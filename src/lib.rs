@@ -688,6 +688,13 @@ mod tests {
             nil!()
         );
     }
+
+    #[test]
+    fn test_not() {
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(not #t)", &mut env).unwrap(), bool!(false));
+        assert_eq!(eval_str("(not #f)", &mut env).unwrap(), bool!(true));
+    }
 }
 
 /// eval_str() is the pipeline
