@@ -698,5 +698,21 @@ pub fn create_default_env() -> LispEnv {
             Ok(LispExp::List(new_vec))
         }),
     );
+    // "length" function
+    env.set(
+        intern("length"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'length\' have no args".into()));
+            };
+            match &args[0] {
+                LispExp::List(x) => Ok(LispExp::Number(x.len() as f64)),
+                LispExp::Nil => Ok(LispExp::Number(0f64)),
+                _ => Err(LispErr::Reason(
+                    "\'length\' only receive \'LispExp::List\'".into(),
+                )),
+            }
+        }),
+    );
     env
 }

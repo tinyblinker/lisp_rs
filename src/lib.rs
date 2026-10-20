@@ -821,6 +821,17 @@ mod tests {
             list!(vec![number!(1)])
         );
     }
+
+    #[test]
+    fn test_length() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(length (list 1 2 3))", &mut env).unwrap(),
+            number!(3)
+        );
+        assert_eq!(eval_str("(length nil)", &mut env).unwrap(), number!(0));
+        assert_eq!(eval_str("(length (list))", &mut env).unwrap(), number!(0));
+    }
 }
 
 /// eval_str() is the pipeline
