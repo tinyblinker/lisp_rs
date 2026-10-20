@@ -657,6 +657,21 @@ mod tests {
             number!(3)
         );
     }
+
+    #[test]
+    fn test_letrec() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str(
+                "(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1)))))
+                         (odd? (lambda (n) (if (= n 0) #f (even? (- n 1))))))
+                 (even? 10))",
+                &mut env
+            )
+            .unwrap(),
+            bool!(true)
+        );
+    }
 }
 
 /// eval_str() is the pipeline

@@ -298,6 +298,51 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         current_exp = result;
                         continue; // TCO!
                     }
+                    // -- letrec --
+                    else if *s == predefined().let_rec {
+                        let args = &elements[1..];
+                        let bindings = &args[0];
+                        let body_expr = &args[1..];
+                        // create shared environment(clone current env to preserve builtins)
+                        let shared_env = Rc::new(RefCell::new(current_env.clone()));
+                        // write all names as placeholder(nil)(when use before bind, return nil as error)
+                        if let LispExp::List(all_binds_lists) = bindings {
+                            for the_bind in all_binds_lists {
+                                if let LispExp::List(b) = the_bind {
+                                    if let LispExp::Symbol(n) = &b[0] {
+                                        shared_env.borrow_mut().set(*n, LispExp::Nil);
+                                    }
+                                }
+                            }
+                        }
+                        // evaluate lambdas in env that can see the whiteboard,then replace placeholder
+                        let mut eval_env = LispEnv::with_outer(shared_env.clone());
+                        if let LispExp::List(all_binds_list) = bindings {
+                            for the_bind in all_binds_list {
+                                if let LispExp::List(b) = the_bind {
+                                    if b.len() >= 2 {
+                                        if let LispExp::Symbol(n) = &b[0] {
+                                            let val = eval(&b[1], &mut eval_env)?;
+                                            shared_env.borrow_mut().set(*n, val);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // evaluate the body in share env(TCO)
+                        let body = if body_expr.len() == 1 {
+                            body_expr[0].clone()
+                        } else {
+                            LispExp::List(
+                                std::iter::once(LispExp::Symbol(predefined().begin))
+                                    .chain(body_expr.iter().cloned())
+                                    .collect(),
+                            )
+                        };
+                        current_env = LispEnv::with_outer(shared_env);
+                        current_exp = body;
+                        continue;
+                    }
                 }
                 // -- Ordinary function call --
                 let func = eval(&elements[0], &mut current_env)?;
