@@ -13,6 +13,7 @@ pub mod parser;
 pub enum LispExp {
     String(String),                                   // String type
     Lambda(Box<LispLambda>),                          // user-difined function
+    Macro(Box<LispLambda>),                           // Macro
     Number(f64),                                      // number type
     Symbol(u64),                                      // for symbol
     List(Vec<LispExp>),                               // imply nested list
@@ -998,6 +999,13 @@ mod tests {
             symbol!(intern("x"))
         );
         assert_eq!(eval_str("'x", &mut env).unwrap(), symbol!(intern("x")));
+    }
+
+    #[test]
+    fn test_defmacro_basic() {
+        let mut env = create_default_env();
+        eval_str("(defmacro twice (x) (list '+ x x))", &mut env).unwrap();
+        assert_eq!(eval_str("(twice 5)", &mut env).unwrap(), number!(10));
     }
 }
 

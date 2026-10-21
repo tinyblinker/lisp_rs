@@ -22,6 +22,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
             | LispExp::Nil
             | LispExp::Func(_)
             | LispExp::String(_)
+            | LispExp::Macro(_)
             | LispExp::Lambda(_) => {
                 *env = current_env; // return the original environment
                 return Ok(current_exp.clone());
@@ -99,6 +100,39 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         }));
                         *env = current_env;
                         return Ok(lambda);
+                    }
+                    // -- defmacro --
+                    else if *s == predefined().defmacro_sym {
+                        let (my_params, my_rest_params) = match &elements[2] {
+                            LispExp::List(my_defmacro_lambda_args) => {
+                                eval_defmacro_get_lambda_paras_helper(my_defmacro_lambda_args)
+                                    .unwrap()
+                            }
+                            _ => {
+                                return Err(LispErr::Reason(
+                                    "\'lambda\' in \'defmacro\' 's parameter must be a list".into(),
+                                ));
+                            }
+                        };
+                        let body = elements[3].clone();
+                        let my_macro = LispExp::Macro(Box::new(LispLambda {
+                            params: my_params,
+                            body: Box::new(body),
+                            // Lambda.env points to the definition-time CallFrame
+                            env: Rc::new(RefCell::new(current_env.clone())),
+                            rest: my_rest_params,
+                        }));
+                        let macro_name = {
+                            match &elements[1] {
+                                LispExp::Symbol(n) => n.clone(),
+                                _ => {
+                                    return Err(LispErr::Reason("\'defmacro\' 's macro name should be a \'LispExp::Symbol\'".into()));
+                                }
+                            }
+                        };
+                        current_env.set(macro_name, my_macro);
+                        *env = current_env;
+                        return Ok(LispExp::Nil);
                     }
                     // -- begin --
                     else if *s == predefined().begin {
@@ -342,9 +376,31 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         current_exp = body;
                         continue;
                     }
+                    // -- Macro Unfold --
+                    if let Ok(LispExp::Macro(my_macro)) = current_env.get(*s) {
+                        let args = &elements[1..];
+                        let mut new_env: LispEnv = LispEnv::with_outer(my_macro.env.clone());
+                        // bind parameter names to its' vals one by one in the cloned env
+                        for (param, arg) in my_macro.params.iter().zip(args.iter()) {
+                            new_env.set(param.clone(), arg.clone());
+                        }
+                        // bind the "rest" for variabic function
+                        if let Some(rest_id) = my_macro.rest {
+                            let extra = args[my_macro.params.len()..].to_vec();
+                            new_env.set(rest_id, LispExp::List(extra));
+                        }
+                        // TCO!!!
+                        // macro "expanded" from "RAW" AST to evaluable "current_exp"
+                        // -->call the "MACRO" to get the expanded code
+                        current_exp = eval(&my_macro.body, &mut new_env)?;
+                        continue;
+                    }
                 }
+
                 // -- Ordinary function call --
                 let func = eval(&elements[0], &mut current_env)?;
+                // this unfold the args' AST, macro should not unfold args' AST,so "macro unfold"
+                // should not be here
                 let args: Result<Vec<LispExp>, LispErr> = elements[1..]
                     .iter()
                     .map(|arg| eval(arg, &mut current_env))
@@ -360,7 +416,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         for (param, arg) in lambda.params.iter().zip(args.clone()?.iter()) {
                             new_env.set(param.clone(), arg.clone());
                         }
-                        // bind the "rest" for vaiabic function
+                        // bind the "rest" for variabic function
                         if let Some(rest_id) = lambda.rest {
                             let extra = (args.clone()?)[lambda.params.len()..].to_vec();
                             new_env.set(rest_id, LispExp::List(extra));
@@ -1015,6 +1071,44 @@ fn eval_lambda_get_paras_helper(
             _ => {
                 return Err(LispErr::Reason(
                     "\'lambda\' 's parameters must be symbol(s)".into(),
+                ))
+            }
+        }
+    }
+    Ok((params_vec, rest_params_id))
+}
+
+fn eval_defmacro_get_lambda_paras_helper(
+    my_defmacro_lambda_args: &Vec<LispExp>,
+) -> Result<(Vec<u64>, Option<u64>), LispErr> {
+    let mut params_vec: Vec<u64> = Vec::new();
+    let mut rest_params_id: Option<u64> = None;
+    let mut have_dot_flag: bool = false;
+    for the_lambda_arg in my_defmacro_lambda_args {
+        match the_lambda_arg {
+            LispExp::Symbol(s) => {
+                match lookup(s.clone()).as_str() {
+                    "." => {
+                        have_dot_flag = true;
+                        continue;
+                    }
+                    _ => match have_dot_flag {
+                        true => match rest_params_id {
+                            Some(_) => return Err(LispErr::Reason(
+                                "\'variadic lambda\' in \'defmacro\' should only have one \'rest paramenter\'"
+                                    .to_string(),
+                            )),
+                            None => rest_params_id = Some(s.clone()),
+                        },
+                        false => {
+                            params_vec.push(s.clone());
+                        }
+                    },
+                }
+            }
+            _ => {
+                return Err(LispErr::Reason(
+                    "\'lambda\' in \'defmacro\' 's parameters must be symbol(s)".into(),
                 ))
             }
         }

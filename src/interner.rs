@@ -22,6 +22,7 @@ pub struct PredefinedSyms {
     pub let_star: u64,
     pub let_rec: u64,
     pub quote_sym: u64,
+    pub defmacro_sym: u64,
 }
 
 pub fn predefined() -> PredefinedSyms {
@@ -38,6 +39,7 @@ pub fn predefined() -> PredefinedSyms {
         let_star: intern("let*"),
         let_rec: intern("letrec"),
         quote_sym: intern("quote"),
+        defmacro_sym: intern("defmacro"),
     }
 }
 
