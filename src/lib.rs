@@ -1007,6 +1007,18 @@ mod tests {
         eval_str("(defmacro twice (x) (list '+ x x))", &mut env).unwrap();
         assert_eq!(eval_str("(twice 5)", &mut env).unwrap(), number!(10));
     }
+
+    #[test]
+    fn test_defmacro_when() {
+        let mut env = create_default_env();
+        eval_str(
+            "(defmacro when (condition . body) (list 'if condition (cons 'begin body) 'nil))",
+            &mut env,
+        )
+        .unwrap();
+        assert_eq!(eval_str("(when #t 42)", &mut env).unwrap(), number!(42));
+        assert_eq!(eval_str("(when #f 42)", &mut env).unwrap(), nil!());
+    }
 }
 
 /// eval_str() is the pipeline
