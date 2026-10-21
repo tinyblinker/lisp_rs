@@ -989,6 +989,16 @@ mod tests {
             list!(vec![number!(1), number!(2), number!(3)])
         );
     }
+
+    #[test]
+    fn test_quote_abbreviation() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(quote x)", &mut env).unwrap(),
+            symbol!(intern("x"))
+        );
+        assert_eq!(eval_str("'x", &mut env).unwrap(), symbol!(intern("x")));
+    }
 }
 
 /// eval_str() is the pipeline
