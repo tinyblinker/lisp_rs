@@ -964,6 +964,19 @@ mod tests {
             number!(12)
         );
     }
+
+    #[test]
+    fn test_filter() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(filter (lambda (x) (> x 0)) (list -1 2 -3 4))", &mut env).unwrap(),
+            list!(vec![number!(2), number!(4)])
+        );
+        assert_eq!(
+            eval_str("(filter (lambda (x) #f) (list 1 2 3))", &mut env).unwrap(),
+            list!(vec![])
+        );
+    }
 }
 
 /// eval_str() is the pipeline

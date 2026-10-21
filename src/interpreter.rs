@@ -923,6 +923,54 @@ pub fn create_default_env() -> LispEnv {
             }
         }),
     );
+    // "filter" function
+    env.set(
+        intern("filter"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'filter\' have no args".into()));
+            } else if args.len() == 1 {
+                return Err(LispErr::Reason("\'filter\' should have two args".into()));
+            } else if args.len() == 2 {
+                let func = args[0].clone();
+                let f_args: Vec<LispExp> = match &args[1] {
+                    LispExp::List(the_args) => the_args.clone(),
+                    LispExp::Nil => {
+                        return Ok(LispExp::Nil);
+                    }
+                    _ => {
+                        return Err(LispErr::Reason(
+                            "\'filter\' 's 2nd arg should be a \'LispExp::List\'".into(),
+                        ));
+                    }
+                };
+                let mut new_list: Vec<LispExp> = Vec::new();
+                for the_arg in f_args {
+                    match &func {
+                        LispExp::Lambda(lambda) => {
+                            // bind parameter names to argument values one by one(in cloned environment)
+                            let mut new_env: LispEnv = LispEnv::with_outer(lambda.env.clone());
+                            new_env.set(lambda.params[0], the_arg.clone());
+                            let abc = eval(&lambda.body, &mut new_env)?;
+                            if abc == LispExp::Bool(true) {
+                                new_list.push(the_arg.clone());
+                            }
+                        }
+                        _ => {
+                            return Err(LispErr::Reason(
+                                "\'filter\' 's 1st arg should be a \'LispExp::Lambda\'".into(),
+                            ));
+                        }
+                    }
+                }
+                return Ok(LispExp::List(new_list));
+            } else {
+                return Err(LispErr::Reason(
+                    "\'filter\' should only have two args".into(),
+                ));
+            }
+        }),
+    );
     env
 }
 
