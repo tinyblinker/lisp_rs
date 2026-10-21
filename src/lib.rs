@@ -27,6 +27,7 @@ pub struct LispLambda {
     pub params: Vec<u64>,          // parameter names, e.g.["x", "y"]
     pub body: Box<LispExp>,        // function body, use Box to avoid stackoverflow
     pub env: Rc<RefCell<LispEnv>>, // the env of lambda
+    pub rest: Option<u64>,         // id of the rest parameters
 }
 
 #[macro_export]
@@ -503,6 +504,7 @@ mod tests {
                 params: vec![intern("x")],
                 body: Box::new(LispExp::Symbol(intern("x"))),
                 env: expected_env,
+                rest: None
             }))
         );
     }
@@ -975,6 +977,16 @@ mod tests {
         assert_eq!(
             eval_str("(filter (lambda (x) #f) (list 1 2 3))", &mut env).unwrap(),
             list!(vec![])
+        );
+    }
+
+    #[test]
+    fn test_variadic_lambda() {
+        let mut env = create_default_env();
+        eval_str("(define my_foo (lambda (x . the_rest) the_rest))", &mut env).unwrap();
+        assert_eq!(
+            eval_str("(my_foo 114514 1 2 3)", &mut env).unwrap(),
+            list!(vec![number!(1), number!(2), number!(3)])
         );
     }
 }

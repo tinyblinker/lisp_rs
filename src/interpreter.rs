@@ -79,30 +79,23 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     }
                     // -- lambda --
                     else if *s == predefined().lambda && elements.len() >= 3 {
-                        let params: Vec<u64> = match &elements[1] {
-                            LispExp::List(param_list) => param_list
-                                .iter()
-                                .map(|param| {
-                                    if let LispExp::Symbol(x) = param {
-                                        x.clone()
-                                    } else {
-                                        intern("?") // return "?" if param_list's element is not a symbol
-                                    }
-                                })
-                                .collect(),
+                        let (my_params, my_rest_params) = match &elements[1] {
+                            LispExp::List(my_lambda_args) => {
+                                eval_lambda_get_paras_helper(my_lambda_args).unwrap()
+                            }
                             _ => {
-                                *env = current_env;
                                 return Err(LispErr::Reason(
-                                    "eval(): lambda\'s parament must be a list".to_string(),
-                                ));
+                                    "\'lambda\' 's parameter must be a list".into(),
+                                ))
                             }
                         };
                         let body = elements[2].clone();
                         let lambda = LispExp::Lambda(Box::new(LispLambda {
-                            params: params,
+                            params: my_params,
                             body: Box::new(body),
                             // Lambda.env points to the definition-time CallFrame
                             env: Rc::new(RefCell::new(current_env.clone())),
+                            rest: my_rest_params,
                         }));
                         *env = current_env;
                         return Ok(lambda);
@@ -364,8 +357,13 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     LispExp::Lambda(lambda) => {
                         let mut new_env: LispEnv = LispEnv::with_outer(lambda.env.clone());
                         // bind parameter names to argument values one by one(set them in cloned environment)
-                        for (param, arg) in lambda.params.iter().zip(args?.iter()) {
+                        for (param, arg) in lambda.params.iter().zip(args.clone()?.iter()) {
                             new_env.set(param.clone(), arg.clone());
+                        }
+                        // bind the "rest" for vaiabic function
+                        if let Some(rest_id) = lambda.rest {
+                            let extra = (args.clone()?)[lambda.params.len()..].to_vec();
+                            new_env.set(rest_id, LispExp::List(extra));
                         }
                         // TCO! Update expression and environment, continue
                         current_exp = lambda.body.as_ref().clone();
@@ -873,7 +871,7 @@ pub fn create_default_env() -> LispEnv {
     env.set(
         intern("equal?"),
         LispExp::Func(|args| {
-            return Ok(LispExp::Bool(equal_helper(&args[0], &args[1])));
+            return Ok(LispExp::Bool(equal_function_helper(&args[0], &args[1])));
         }),
     );
     // "apply" function
@@ -974,11 +972,52 @@ pub fn create_default_env() -> LispEnv {
     env
 }
 
-fn equal_helper(expr_a: &LispExp, expr_b: &LispExp) -> bool {
+fn equal_function_helper(expr_a: &LispExp, expr_b: &LispExp) -> bool {
     match (expr_a, expr_b) {
         (LispExp::List(x), LispExp::List(y)) => {
-            x.len() == y.len() && x.iter().zip(y).all(|(m, n)| equal_helper(m, n))
+            x.len() == y.len() && x.iter().zip(y).all(|(m, n)| equal_function_helper(m, n))
         }
         (x, y) => x == y,
     }
+}
+
+/// deal with variadic lambda's parameters list
+/// "(a . b)" => params: vec![intern("a")], rest: Some(intern("b"));
+/// "(a b c)" => params: vec![intern("a"),intern("b"),intern("c")], rest: None;
+fn eval_lambda_get_paras_helper(
+    my_lambda_args: &Vec<LispExp>,
+) -> Result<(Vec<u64>, Option<u64>), LispErr> {
+    let mut params_vec: Vec<u64> = Vec::new();
+    let mut rest_params_id: Option<u64> = None;
+    let mut have_dot_flag: bool = false;
+    for the_lambda_arg in my_lambda_args {
+        match the_lambda_arg {
+            LispExp::Symbol(s) => {
+                match lookup(s.clone()).as_str() {
+                    "." => {
+                        have_dot_flag = true;
+                        continue;
+                    }
+                    _ => match have_dot_flag {
+                        true => match rest_params_id {
+                            Some(_) => return Err(LispErr::Reason(
+                                "\'variadic lambda\' 's should only have one \'rest paramenter\'"
+                                    .to_string(),
+                            )),
+                            None => rest_params_id = Some(s.clone()),
+                        },
+                        false => {
+                            params_vec.push(s.clone());
+                        }
+                    },
+                }
+            }
+            _ => {
+                return Err(LispErr::Reason(
+                    "\'lambda\' 's parameters must be symbol(s)".into(),
+                ))
+            }
+        }
+    }
+    Ok((params_vec, rest_params_id))
 }
