@@ -876,6 +876,53 @@ pub fn create_default_env() -> LispEnv {
             return Ok(LispExp::Bool(equal_helper(&args[0], &args[1])));
         }),
     );
+    // "apply" function
+    env.set(
+        intern("apply"),
+        LispExp::Func(|args| {
+            if args.is_empty() {
+                return Err(LispErr::Reason("\'apply\' have no args".into()));
+            } else if args.len() == 1 {
+                return Err(LispErr::Reason("\'apply\' should have two args".into()));
+            } else if args.len() == 2 {
+                let func = args[0].clone();
+                let f_args: Vec<LispExp> = match &args[1] {
+                    LispExp::List(the_args) => {
+                        the_args.clone()
+                    }
+                    LispExp::Nil=>{
+                        return Ok(LispExp::Nil);
+                    },
+                    _ => {
+                        return Err(LispErr::Reason(
+                            "\'apply\' 's 2nd arg should be a \'LispExp::List\'".into(),
+                        ));
+                    }
+                };
+                match func {
+                    LispExp::Func(f) => {
+                        return f(&(f_args));
+                    }
+                    LispExp::Lambda(lambda) => {
+                        let mut new_env:LispEnv = LispEnv::with_outer(lambda.env.clone());
+                        // bind parameter names to argument values one by one(in cloned environment)
+                        for (param, arg) in lambda.params.iter().zip(f_args.iter()) {
+                            new_env.set(param.clone(), arg.clone());
+                        }
+                        let res = eval(&lambda.body,&mut new_env)?;
+                        return Ok(res)
+                    },
+                    _ => {
+                        return Err(LispErr::Reason(
+                            "\'apply\' 's 1st arg should be a \'LispExp::Lambda\' or \'LispExp::Func\'".into(),
+                        ));
+                    }
+                }
+            } else {
+                return Err(LispErr::Reason("\'apply\' should only have two args".into()));
+            }
+        }),
+    );
     env
 }
 

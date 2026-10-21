@@ -951,6 +951,19 @@ mod tests {
             LispExp::Bool(false)
         );
     }
+
+    #[test]
+    fn test_apply() {
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(apply + (list 1 2 3))", &mut env).unwrap(),
+            number!(6)
+        );
+        assert_eq!(
+            eval_str("(apply (lambda (x y) (* x y)) (list 3 4))", &mut env).unwrap(),
+            number!(12)
+        );
+    }
 }
 
 /// eval_str() is the pipeline
