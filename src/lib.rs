@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{env::LispEnv, interner::intern, interpreter::eval, lexer::tokenize, parser::parse};
 
+pub mod debug_helper;
 pub mod env;
 pub mod interner;
 pub mod interpreter;
@@ -1018,6 +1019,38 @@ mod tests {
         .unwrap();
         assert_eq!(eval_str("(when #t 42)", &mut env).unwrap(), number!(42));
         assert_eq!(eval_str("(when #f 42)", &mut env).unwrap(), nil!());
+    }
+
+    #[test]
+    fn test_gensym_in_defmacro_to_avoid_var_crash() {
+        // case 1:
+        let mut env = create_default_env();
+        eval_str("(define tmp 21)", &mut env).unwrap();
+        eval_str(
+            "(defmacro my-or (a b)
+                     (list 'let (list (list 'tmp a))
+                       (list 'if 'tmp 'tmp b)))",
+            &mut env,
+        )
+        .unwrap();
+        // this is a normal case
+        assert_eq!(eval_str("(my-or #f 42)", &mut env).unwrap(), number!(42));
+        // this is when 'gensym' should takes effects (vars name is conflict)
+        assert_eq!(eval_str("(my-or #f tmp)", &mut env).unwrap(), bool!(false));
+
+        // case 2: (lambda will leak vars)
+        let mut env = create_default_env();
+        // to let (a_macro tmp) got '42', defmacro as below
+        eval_str("(define tmp 21)", &mut env).unwrap();
+        eval_str(
+            "(defmacro my-or (a b)
+                     (let ((tmp (gensym)))
+                     (list 'let (list (list tmp a))
+                       (list 'if tmp tmp b))))",
+            &mut env,
+        )
+        .unwrap();
+        assert_eq!(eval_str("(my-or #f tmp)", &mut env).unwrap(), number!(21));
     }
 }
 

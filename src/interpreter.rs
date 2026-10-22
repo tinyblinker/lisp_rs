@@ -1,3 +1,4 @@
+use crate::debug_helper::friendly_check_lispexp_list;
 use crate::intern;
 use crate::interner::lookup;
 use crate::interner::predefined;
@@ -5,7 +6,10 @@ use crate::number;
 use crate::LispLambda;
 use crate::RefCell;
 use crate::{env::LispEnv, LispErr, LispExp};
+use std::any::Any;
 use std::rc::Rc;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 /// eval() is the "Evaluator"
 #[allow(dead_code)]
@@ -392,12 +396,22 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         // TCO!!!
                         // macro "expanded" from "RAW" AST to evaluable "current_exp"
                         // -->call the "MACRO" to get the expanded code
+                        println!("####[debug]current_exp = {:?};", current_exp);
                         current_exp = eval(&my_macro.body, &mut new_env)?;
+                        println!("move here 01");
+                        println!(
+                            "####[debug][in the 01]current_exp = {:?};",
+                            friendly_check_lispexp_list(current_exp.clone()).unwrap()
+                        );
                         continue;
                     }
                 }
-
                 // -- Ordinary function call --
+                println!("move here 02");
+                println!(
+                    "####[debug][in the 02]elements[0] = {:?};",
+                    friendly_check_lispexp_list(LispExp::List(vec![elements[0].clone()])).unwrap()
+                );
                 let func = eval(&elements[0], &mut current_env)?;
                 // this unfold the args' AST, macro should not unfold args' AST,so "macro unfold"
                 // should not be here
@@ -426,9 +440,22 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         current_env = new_env;
                         continue;
                     }
-                    _ => {
+                    not_a_function => {
                         *env = current_env;
-                        return Err(LispErr::Reason("Not a function".to_string()));
+                        match not_a_function {
+                            LispExp::Symbol(s) => {
+                                return Err(LispErr::Reason(format!(
+                                    "{:?} isn't a function, we eval the 1st element of a list as func, but got a \'LispExp::Symbol\'",
+                                    lookup(s)
+                                )));
+                            }
+                            _ => {
+                                return Err(LispErr::Reason(format!(
+                                    "\'{:?}\' isn't a function",
+                                    not_a_function
+                                )));
+                            }
+                        }
                     }
                 }
             }
@@ -1023,6 +1050,20 @@ pub fn create_default_env() -> LispEnv {
                     "\'filter\' should only have two args".into(),
                 ));
             }
+        }),
+    );
+    // -- gensym --
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    env.set(
+        intern("gensym"),
+        LispExp::Func(|args| {
+            let perfix = if let Some(LispExp::String(s)) = args.first() {
+                s.clone()
+            } else {
+                "g".into()
+            };
+            let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+            Ok(LispExp::Symbol(intern(&format!("{}_{}", perfix, id))))
         }),
     );
     env
