@@ -8,6 +8,7 @@ use crate::LispLambda;
 use crate::RefCell;
 use crate::{env::LispEnv, LispErr, LispExp};
 use std::io::BufRead;
+use std::io::Write;
 use std::rc::Rc;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -1089,8 +1090,10 @@ pub fn create_default_env() -> LispEnv {
         intern("display"),
         LispExp::Func(|args| {
             if let Some(arg) = args.first() {
-                // use LispExp's Display trait to print
-                print!("{}", arg);
+                let stdout = std::io::stdout();
+                let mut out = stdout.lock();
+                display_core_helper(&mut out, arg)
+                    .map_err(|err| LispErr::Reason(format!("\'display\': {err}")))?;
             }
             Ok(LispExp::Nil)
         }),
@@ -1117,6 +1120,10 @@ pub fn create_default_env() -> LispEnv {
         }),
     );
     env
+}
+
+pub fn display_core_helper<W: Write>(out: &mut W, arg: &LispExp) -> std::io::Result<()> {
+    write!(out, "{}", arg)
 }
 
 fn equal_function_helper(expr_a: &LispExp, expr_b: &LispExp) -> bool {
