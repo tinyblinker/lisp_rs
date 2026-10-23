@@ -23,6 +23,9 @@ pub struct PredefinedSyms {
     pub let_rec: u64,
     pub quote_sym: u64,
     pub defmacro_sym: u64,
+    pub quasiquote: u64,
+    pub unquote: u64,
+    pub unquote_splicing: u64,
 }
 
 pub fn predefined() -> PredefinedSyms {
@@ -40,6 +43,9 @@ pub fn predefined() -> PredefinedSyms {
         let_rec: intern("letrec"),
         quote_sym: intern("quote"),
         defmacro_sym: intern("defmacro"),
+        quasiquote: intern("quasiquote"),
+        unquote: intern("unquote"),
+        unquote_splicing: intern("unquote-splicing"),
     }
 }
 

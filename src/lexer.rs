@@ -8,6 +8,8 @@ pub fn tokenize(input: &str) -> Vec<&str> {
             '(' => tokens.push(&input[index..=index]),
             ')' => tokens.push(&input[index..=index]),
             '\'' => tokens.push(&input[index..=index]),
+            '`' => tokens.push(&input[index..=index]),
+            ',' => tokens.push(&input[index..=index]),
             '"' => {
                 let start = index;
                 while let Some((i, c)) = chars.next() {

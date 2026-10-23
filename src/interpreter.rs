@@ -2,11 +2,11 @@ use crate::debug_helper::friendly_check_lispexp_list;
 use crate::intern;
 use crate::interner::lookup;
 use crate::interner::predefined;
+use crate::interner::PredefinedSyms;
 use crate::number;
 use crate::LispLambda;
 use crate::RefCell;
 use crate::{env::LispEnv, LispErr, LispExp};
-use std::any::Any;
 use std::rc::Rc;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -378,6 +378,12 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                         };
                         current_env = LispEnv::with_outer(shared_env);
                         current_exp = body;
+                        continue;
+                    } else if *s == predefined().quasiquote {
+                        let args = &elements[1..];
+                        let expanded = quasiquote_expand_helper(&args[0], &predefined()).unwrap();
+                        // TCO!
+                        current_exp = expanded;
                         continue;
                     }
                     // -- Macro Unfold --
@@ -1156,3 +1162,93 @@ fn eval_defmacro_get_lambda_paras_helper(
     }
     Ok((params_vec, rest_params_id))
 }
+
+/// quasiquote expand helper function
+fn quasiquote_expand_helper(
+    template: &LispExp,
+    predefined_syms: &PredefinedSyms,
+) -> Result<LispExp, LispErr> {
+    let the_quote = predefined_syms.quote_sym;
+    let the_unquote = predefined_syms.unquote;
+    let the_unquote_splicing = predefined_syms.unquote_splicing;
+    let the_append = intern("append");
+    let the_cons = intern("cons");
+    // consider replace 'if..(else if)..else' with 'match'
+    match template {
+        LispExp::List(contents) => {
+            match contents.is_empty() {
+                true => {
+                    // empty list
+                    return Ok(LispExp::List(vec![
+                        LispExp::Symbol(the_quote),
+                        LispExp::List(vec![]),
+                    ]));
+                }
+                false => {
+                    match contents[0] {
+                        LispExp::Symbol(s) => {
+                            // special list
+                            if s == the_unquote && contents.len() == 2 {
+                                return Ok(contents[1].clone());
+                            } else if s == the_unquote {
+                                return Err(LispErr::Reason(
+                                    "\'unquote\'(\',\') should have exactly one argument".into(),
+                                ));
+                            } else if s == the_unquote_splicing {
+                                // ,@x cannot appear at list head (it can only splice in element position)
+                                // No special handling here, falls through to normal list-building logic.
+                                // Note: ,@ at list head is undefined behavior in standard Lisp.
+                                // This implementation treats it as a regular element, which may
+                                // produce unexpected results. Avoid using ,@ at list head.
+                                return Err(LispErr::Reason(
+                                    "\'unquote-splicing\'(\',@\') shall not be the 1st element of the \'quasiquote\' list".into(),
+                                ));
+                            }
+                        }
+                        _ => {}
+                    }
+                    // oridinary list->build 'cons' chain right to left
+                    // e.g. `(a ,b c)--->(cons 'a (cons b (cons 'c '())))
+                    let mut result =
+                        LispExp::List(vec![LispExp::Symbol(the_quote), LispExp::List(vec![])]);
+                    // iterate right-to-left
+                    for el in contents.iter().rev() {
+                        if let LispExp::List(inner) = el {
+                            if inner.len() == 2 {
+                                if let LispExp::Symbol(s) = &inner[0] {
+                                    if *s == the_unquote_splicing {
+                                        // ,@expr -> (append expr <accumulated result>)
+                                        result = LispExp::List(vec![
+                                            LispExp::Symbol(the_append),
+                                            inner[1].clone(),
+                                            result,
+                                        ]);
+                                        continue;
+                                    } else if *s == the_unquote {
+                                        // ,expr -> (cons expr <accumulated result>)
+                                        result = LispExp::List(vec![
+                                            LispExp::Symbol(the_cons),
+                                            inner[1].clone(),
+                                            result,
+                                        ]);
+                                        continue;
+                                    }
+                                }
+                            }
+                        };
+                        let expanded = quasiquote_expand_helper(el, predefined_syms).unwrap();
+                        result = LispExp::List(vec![LispExp::Symbol(the_cons), expanded, result]);
+                    }
+                    return Ok(result);
+                }
+            }
+        }
+        _ => {
+            return Ok(LispExp::List(vec![
+                LispExp::Symbol(the_quote),
+                template.clone(),
+            ]));
+        }
+    }
+}
+

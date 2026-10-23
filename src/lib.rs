@@ -1038,7 +1038,7 @@ mod tests {
         // this is when 'gensym' should takes effects (vars name is conflict)
         assert_eq!(eval_str("(my-or #f tmp)", &mut env).unwrap(), bool!(false));
 
-        // case 2: (lambda will leak vars)
+        // case 2: (lambda will leak vars, so create a new env)
         let mut env = create_default_env();
         // to let (a_macro tmp) got '42', defmacro as below
         eval_str("(define tmp 21)", &mut env).unwrap();
@@ -1051,6 +1051,28 @@ mod tests {
         )
         .unwrap();
         assert_eq!(eval_str("(my-or #f tmp)", &mut env).unwrap(), number!(21));
+    }
+
+    #[test]
+    fn test_quasiquote() {
+        let mut env = create_default_env();
+        // `42 → 42
+        assert_eq!(eval_str("`42", &mut env).unwrap(), LispExp::Number(42.0));
+
+        // `(,x) → value of x (assuming x=10) → (10)
+        eval_str("(define x 10)", &mut env).unwrap();
+        assert_eq!(
+            eval_str("`(,x)", &mut env).unwrap(),
+            LispExp::List(vec![LispExp::Number(10.0)])
+        );
+
+        // `(a ,b c) → (a 2 c) (b=2, rest quoted)
+        eval_str("(define b 2)", &mut env).unwrap();
+        let r = eval_str("`(a ,b c)", &mut env).unwrap();
+        assert_eq!(
+            r,
+            list!(vec!(symbol!(intern("a")), number!(2), symbol!(intern("c")))),
+        );
     }
 }
 

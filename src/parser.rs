@@ -19,6 +19,33 @@ pub fn parse<'a>(tokens: &'a [&'a str]) -> Result<(LispExp, &'a [&'a str]), Lisp
                 the_rest,
             ))
         }
+        "`" => {
+            // quasiquote
+            let (quasiquoted, rest_tokens_2) = parse(rest_tokens)?;
+            Ok((
+                LispExp::List(vec![LispExp::Symbol(intern("quasiquote")), quasiquoted]),
+                rest_tokens_2,
+            ))
+        }
+        "," => {
+            // unquote
+            let (unquoted, rest_tokens_2) = parse(rest_tokens)?;
+            Ok((
+                LispExp::List(vec![LispExp::Symbol(intern("unquote")), unquoted]),
+                rest_tokens_2,
+            ))
+        }
+        ",@" => {
+            // unquote-splicing
+            let (unquoted_splicing, rest_tokens_2) = parse(rest_tokens)?;
+            Ok((
+                LispExp::List(vec![
+                    LispExp::Symbol(intern("unquote-splicing")),
+                    unquoted_splicing,
+                ]),
+                rest_tokens_2,
+            ))
+        }
         _ => Ok((parse_atom(token), rest_tokens)),
     }
 }
