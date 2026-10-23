@@ -1212,6 +1212,12 @@ mod tests {
             LispExp::Nil
         );
     }
+
+    #[test]
+    fn test_newline_returns_nil() {
+        let mut env = create_default_env();
+        assert_eq!(eval_str("(newline)", &mut env).unwrap(), LispExp::Nil);
+    }
 }
 
 /// eval_str() is the pipeline
