@@ -157,10 +157,14 @@ pub enum LispErr {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
     use crate::{
         env::LispEnv,
-        interpreter::{create_default_env, display_core_helper, eval, newline_core_helper},
+        interpreter::{
+            create_default_env, display_core_helper, eval, newline_core_helper, read_core_helper,
+        },
         lexer::tokenize,
         parser::{parse, parse_atom},
     };
@@ -1233,6 +1237,19 @@ mod tests {
         let mut out = Vec::new();
         newline_core_helper(&mut out).unwrap();
         assert_eq!(String::from_utf8(out).unwrap(), "\n");
+    }
+
+    #[test]
+    fn test_read_from_strips_trailings_newline() {
+        let mut input = Cursor::new(b" hello world \nsecond line\r\n");
+        assert_eq!(
+            read_core_helper(&mut input).unwrap(),
+            string!(" hello world")
+        );
+        assert_eq!(
+            read_core_helper(&mut input).unwrap(),
+            string!("second line")
+        );
     }
 }
 

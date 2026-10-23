@@ -1114,15 +1114,20 @@ pub fn create_default_env() -> LispEnv {
         intern("read"),
         LispExp::Func(|_args| {
             let stdin = std::io::stdin();
-            let mut line = String::new();
-            match stdin.lock().read_line(&mut line) {
-                Ok(0) => Ok(LispExp::Nil),
-                Ok(_) => Ok(LispExp::String(line.trim_end().to_string())),
-                Err(_) => Err(LispErr::Reason("read: failed to read input".into())),
-            }
+            let mut reader = stdin.lock();
+            read_core_helper(&mut reader)
         }),
     );
     env
+}
+
+pub fn read_core_helper<R: BufRead>(reader: &mut R) -> Result<LispExp, LispErr> {
+    let mut line = String::new();
+    match reader.read_line(&mut line) {
+        Ok(0) => Ok(LispExp::Nil),
+        Ok(_) => Ok(LispExp::String(line.trim_end().to_string())),
+        Err(_) => Err(LispErr::Reason("\'read\': failed to read input".into())),
+    }
 }
 
 pub fn newline_core_helper<W: Write>(out: &mut W) -> std::io::Result<()> {
