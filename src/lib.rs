@@ -1251,6 +1251,12 @@ mod tests {
             string!("second line")
         );
     }
+
+    #[test]
+    fn test_read_from_eof_return_nil() {
+        let mut input = Cursor::new(b"");
+        assert_eq!(read_core_helper(&mut input).unwrap(), nil!());
+    }
 }
 
 /// eval_str() is the pipeline
