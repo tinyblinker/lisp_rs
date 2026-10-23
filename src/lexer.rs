@@ -9,7 +9,15 @@ pub fn tokenize(input: &str) -> Vec<&str> {
             ')' => tokens.push(&input[index..=index]),
             '\'' => tokens.push(&input[index..=index]),
             '`' => tokens.push(&input[index..=index]),
-            ',' => tokens.push(&input[index..=index]),
+            ',' => {
+                let start = index;
+                if let Some((at_index, '@')) = chars.peek().cloned() {
+                    chars.next(); // consume the '@'
+                    tokens.push(&input[start..=at_index]); // --> generate the ',@'
+                } else {
+                    tokens.push(&input[index..=index]);
+                }
+            }
             '"' => {
                 let start = index;
                 while let Some((i, c)) = chars.next() {

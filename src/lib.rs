@@ -1055,11 +1055,12 @@ mod tests {
 
     #[test]
     fn test_quasiquote() {
-        let mut env = create_default_env();
         // `42 → 42
+        let mut env = create_default_env();
         assert_eq!(eval_str("`42", &mut env).unwrap(), LispExp::Number(42.0));
 
         // `(,x) → value of x (assuming x=10) → (10)
+        let mut env = create_default_env();
         eval_str("(define x 10)", &mut env).unwrap();
         assert_eq!(
             eval_str("`(,x)", &mut env).unwrap(),
@@ -1067,12 +1068,46 @@ mod tests {
         );
 
         // `(a ,b c) → (a 2 c) (b=2, rest quoted)
+        let mut env = create_default_env();
         eval_str("(define b 2)", &mut env).unwrap();
         let r = eval_str("`(a ,b c)", &mut env).unwrap();
         assert_eq!(
             r,
             list!(vec!(symbol!(intern("a")), number!(2), symbol!(intern("c")))),
         );
+
+        // `(a ,@b c) → (a 1 2 c) (b=(1 2), rest quoted)
+        let mut env = create_default_env();
+        eval_str("(define b (list 1 2))", &mut env).unwrap();
+        let r = eval_str("`(a ,@b c)", &mut env).unwrap();
+        assert_eq!(
+            r,
+            list!(vec!(
+                symbol!(intern("a")),
+                number!(1),
+                number!(2),
+                symbol!(intern("c"))
+            )),
+        );
+
+        // defmacro for 'when', in comparision
+        let mut env = create_default_env();
+        eval_str(
+            "(defmacro when_a (condition . body)
+                     (list 'if condition (cons 'begin body) 'nil))",
+            &mut env,
+        )
+        .unwrap();
+        eval_str(
+            "(defmacro when_b (condition . body)
+                    `(if ,condition (begin ,@body) nil))",
+            &mut env,
+        )
+        .unwrap();
+        let r_a = eval_str("(when_a #t (+ 1 2))", &mut env).unwrap();
+        assert_eq!(r_a, number!(3));
+        let r_b = eval_str("(when_b #t (+ 1 3))", &mut env).unwrap();
+        assert_eq!(r_b, number!(4));
     }
 }
 
