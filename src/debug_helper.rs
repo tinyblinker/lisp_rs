@@ -1,5 +1,6 @@
 use crate::{interner::lookup, LispErr, LispExp};
-
+/// Display trait can replace this one for better accessiblity
+/// this function just left here for referrence
 pub fn friendly_check_lispexp_list(a_lisp_list: LispExp) -> Result<String, LispErr> {
     let mut res_str = String::new();
     match a_lisp_list {

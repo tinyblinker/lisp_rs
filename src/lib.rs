@@ -93,6 +93,17 @@ impl fmt::Display for LispExp {
     }
 }
 
+/// we shall implement "Disply Trait" for LispErr
+impl fmt::Display for LispErr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LispErr::Reason(reason) => {
+                write!(f, "{}", reason)
+            }
+        }
+    }
+}
+
 /// Lambda expression (user-defined function)
 #[derive(Clone, Debug, PartialEq)]
 pub struct LispLambda {
