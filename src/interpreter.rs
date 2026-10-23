@@ -7,6 +7,7 @@ use crate::number;
 use crate::LispLambda;
 use crate::RefCell;
 use crate::{env::LispEnv, LispErr, LispExp};
+use std::io::BufRead;
 use std::rc::Rc;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
@@ -1081,6 +1082,38 @@ pub fn create_default_env() -> LispEnv {
                 .map(|a| format!("{}", a))
                 .unwrap_or("error".into());
             Err(LispErr::Reason(msg))
+        }),
+    );
+    // -- display --
+    env.set(
+        intern("display"),
+        LispExp::Func(|args| {
+            if let Some(arg) = args.first() {
+                // use LispExp's Display trait to print
+                print!("{}", arg);
+            }
+            Ok(LispExp::Nil)
+        }),
+    );
+    // -- newline -- print a line break
+    env.set(
+        intern("newline"),
+        LispExp::Func(|_args| {
+            println!();
+            Ok(LispExp::Nil)
+        }),
+    );
+    // -- read -- read user inputs
+    env.set(
+        intern("read"),
+        LispExp::Func(|_args| {
+            let stdin = std::io::stdin();
+            let mut line = String::new();
+            match stdin.lock().read_line(&mut line) {
+                Ok(0) => Ok(LispExp::Nil),
+                Ok(_) => Ok(LispExp::String(line.trim_end().to_string())),
+                Err(_) => Err(LispErr::Reason("read: failed to read input".into())),
+            }
         }),
     );
     env

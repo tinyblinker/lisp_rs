@@ -1201,6 +1201,17 @@ mod tests {
             Err(LispErr::Reason("#<macro (condition . body)> (quasiquote (if (unquote condition) (begin (unquote-splicing body)) nil))".into()))
         );
     }
+
+    #[test]
+    fn test_display_returns_nil() {
+        let mut env = create_default_env();
+        // display returns nil (it has a side effect — printing to screen — but returns nil)
+        assert_eq!(eval_str("(display 42)", &mut env).unwrap(), LispExp::Nil);
+        assert_eq!(
+            eval_str("(display \"hello\")", &mut env).unwrap(),
+            LispExp::Nil
+        );
+    }
 }
 
 /// eval_str() is the pipeline
