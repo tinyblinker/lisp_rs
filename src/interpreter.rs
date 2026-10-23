@@ -1102,7 +1102,10 @@ pub fn create_default_env() -> LispEnv {
     env.set(
         intern("newline"),
         LispExp::Func(|_args| {
-            println!();
+            let stdout = std::io::stdout();
+            let mut out = stdout.lock();
+            newline_core_helper(&mut out)
+                .map_err(|err| LispErr::Reason(format!("\'newline\': {err}")))?;
             Ok(LispExp::Nil)
         }),
     );
@@ -1120,6 +1123,10 @@ pub fn create_default_env() -> LispEnv {
         }),
     );
     env
+}
+
+pub fn newline_core_helper<W: Write>(out: &mut W) -> std::io::Result<()> {
+    writeln!(out)
 }
 
 pub fn display_core_helper<W: Write>(out: &mut W, arg: &LispExp) -> std::io::Result<()> {

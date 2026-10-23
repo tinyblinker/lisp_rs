@@ -160,7 +160,7 @@ mod tests {
     use super::*;
     use crate::{
         env::LispEnv,
-        interpreter::{create_default_env, display_core_helper, eval},
+        interpreter::{create_default_env, display_core_helper, eval, newline_core_helper},
         lexer::tokenize,
         parser::{parse, parse_atom},
     };
@@ -1226,6 +1226,13 @@ mod tests {
         display_core_helper(&mut out, &symbol!(intern("+"))).unwrap();
         display_core_helper(&mut out, &string!("hello")).unwrap();
         assert_eq!(String::from_utf8(out).unwrap(), "42+\"hello\"");
+    }
+
+    #[test]
+    fn test_newline_writes_one_break() {
+        let mut out = Vec::new();
+        newline_core_helper(&mut out).unwrap();
+        assert_eq!(String::from_utf8(out).unwrap(), "\n");
     }
 }
 
