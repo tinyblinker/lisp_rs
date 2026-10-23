@@ -1,6 +1,12 @@
 use std::io::{self, BufRead, Stdin, Write};
 
-use my_lisp::{env::LispEnv, interpreter::create_default_env, LispErr, LispExp};
+use my_lisp::{
+    env::LispEnv,
+    interpreter::{create_default_env, eval},
+    lexer::tokenize,
+    parser::parse,
+    LispErr, LispExp,
+};
 
 /// read input that may span multiple lines
 fn read_input(stdin: &Stdin) -> Option<String> {
@@ -20,49 +26,75 @@ fn read_input(stdin: &Stdin) -> Option<String> {
             Ok(_) => {
                 got_input = true;
                 buffer.push_str(&line);
-                let mut in_string = false;
-                let mut escape = false;
+                let mut in_string = false; // whether the char is in a LispExp::String
+                let mut escape = false; // whether the char is demostrate by '\'
                 for ch in line.chars() {
-                    match ch {
-                        '"' if !escape => {
-                            in_string = !in_string;
+                    if in_string {
+                        match ch {
+                            '\\' => escape = !escape,
+                            '"' => in_string = false,
+                            _ => escape = false,
                         }
-                        '\\' if in_string => {
-                            escape = !escape;
-                        }
-                        '(' if in_string => {
-                            depth += 1;
-                        }
-                        ')' if in_string => {
-                            depth -= 1;
-                        }
-                        _ => {
-                            escape = false;
+                    } else {
+                        match ch {
+                            '"' => in_string = true,
+                            '(' => depth += 1,
+                            ')' => depth -= 1,
+                            _ => {}
                         }
                     }
                 }
+                // get closed or unclosed exprs, return immediatly
                 if depth <= 0 {
                     break;
                 }
-                print!("... ");
+                print!("...");
                 io::stdout().flush().unwrap();
-                todo!();
             }
             Err(_) => break,
         }
     }
-    todo!();
+    Some(buffer)
 }
 
-fn eval_input(input: &String, env: &mut LispEnv) -> Result<LispExp, LispErr> {
-    todo!();
+fn eval_input(input: &str, env: &mut LispEnv) -> Result<String, String> {
+    let tokens = tokenize(input);
+    if tokens.is_empty() {
+        return Ok("nil".to_string());
+    }
+    let mut remaining: &[&str] = &tokens;
+    let mut results: Vec<LispExp> = Vec::new();
+    while !remaining.is_empty() {
+        let (exp, rest) = parse(remaining).map_err(|e| match e {
+            LispErr::Reason(msg) => msg,
+        })?;
+        remaining = rest;
+        match eval(&exp, env) {
+            Ok(val) => {
+                results.push(val);
+            }
+            Err(e) => match e {
+                LispErr::Reason(msg) => return Err(msg),
+            },
+        };
+    }
+    if results.is_empty() {
+        Ok("nil".to_string())
+    } else if results.len() == 1 {
+        Ok(format!("{}", results[0]))
+    } else {
+        Ok(results
+            .iter()
+            .map(|r| format!("{}", r))
+            .collect::<Vec<_>>()
+            .join("\n"))
+    }
 }
-
 fn main() {
     // [TODO] write a benchmark to bench the interpreter
     println!("==Heart!Heart!Meow!==");
     println!("<Lisp-rs REPL v0.0.1>");
-    println!("Type:help for help, :q to quit, Ctrl+D to exit\n");
+    println!("Type :help for help, :q to quit, Ctrl+D to exit\n");
     let mut env = create_default_env();
     let stdin = std::io::stdin();
     loop {
