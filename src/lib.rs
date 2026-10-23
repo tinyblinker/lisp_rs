@@ -1,6 +1,12 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt, rc::Rc};
 
-use crate::{env::LispEnv, interner::intern, interpreter::eval, lexer::tokenize, parser::parse};
+use crate::{
+    env::LispEnv,
+    interner::{intern, lookup},
+    interpreter::eval,
+    lexer::tokenize,
+    parser::parse,
+};
 
 pub mod debug_helper;
 pub mod env;
@@ -21,6 +27,70 @@ pub enum LispExp {
     Func(fn(&[LispExp]) -> Result<LispExp, LispErr>), // function type
     Bool(bool),                                       // boolean values (#t, #f)
     Nil,                                              // empty value (nil)
+}
+
+/// we shall implement "Disply Trait" for LispExp
+impl fmt::Display for LispExp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LispExp::Number(n) => {
+                if n.fract() == 0.0 {
+                    write!(f, "{}", *n as i64)
+                } else {
+                    write!(f, "{}", n)
+                }
+            }
+            LispExp::Symbol(id) => {
+                write!(f, "{}", lookup(*id))
+            }
+            LispExp::List(els) => {
+                write!(f, "(")?;
+                for (i, e) in els.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}", e)?;
+                }
+                write!(f, ")")
+            }
+            LispExp::Bool(b) => write!(f, "{}", if *b { "#t" } else { "#f" }),
+            LispExp::Nil => write!(f, "nil"),
+            LispExp::String(s) => write!(f, "\"{}\"", s),
+            LispExp::Func(_) => write!(f, "#<builtin-function>"),
+            LispExp::Lambda(lam) => {
+                write!(
+                    f,
+                    "#<lambda ({} . {})> {}",
+                    lam.params
+                        .iter()
+                        .map(|&id| lookup(id))
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                    match lam.rest {
+                        Some(rest_param) => lookup(rest_param),
+                        None => "None".to_string(),
+                    },
+                    lam.body
+                )
+            }
+            LispExp::Macro(lam) => {
+                write!(
+                    f,
+                    "#<macro ({} . {})> {}",
+                    lam.params
+                        .iter()
+                        .map(|&id| lookup(id))
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                    match lam.rest {
+                        Some(rest_param) => lookup(rest_param),
+                        None => "None".to_string(),
+                    },
+                    lam.body
+                )
+            }
+        }
+    }
 }
 
 /// Lambda expression (user-defined function)
@@ -1108,6 +1178,28 @@ mod tests {
         assert_eq!(r_a, number!(3));
         let r_b = eval_str("(when_b #t (+ 1 3))", &mut env).unwrap();
         assert_eq!(r_b, number!(4));
+    }
+
+    #[test]
+    fn test_error_function() {
+        // error msg in String
+        let mut env = create_default_env();
+        assert_eq!(
+            eval_str("(error \"do not eat emacs\")", &mut env),
+            Err(LispErr::Reason("\"do not eat emacs\"".into()))
+        );
+        // error msg from 'macro' (nearly the same as 'lambda')
+        let mut env = create_default_env();
+        eval_str(
+            "(defmacro when (condition . body)
+                    `(if ,condition (begin ,@body) nil))",
+            &mut env,
+        )
+        .unwrap();
+        assert_eq!(
+            eval_str("(error when)", &mut env),
+            Err(LispErr::Reason("#<macro (condition . body)> (quasiquote (if (unquote condition) (begin (unquote-splicing body)) nil))".into()))
+        );
     }
 }
 

@@ -1072,6 +1072,17 @@ pub fn create_default_env() -> LispEnv {
             Ok(LispExp::Symbol(intern(&format!("{}_{}", perfix, id))))
         }),
     );
+    // -- error --
+    env.set(
+        intern("error"),
+        LispExp::Func(|args| {
+            let msg = args
+                .first()
+                .map(|a| format!("{}", a))
+                .unwrap_or("error".into());
+            Err(LispErr::Reason(msg))
+        }),
+    );
     env
 }
 
@@ -1251,4 +1262,3 @@ fn quasiquote_expand_helper(
         }
     }
 }
-
