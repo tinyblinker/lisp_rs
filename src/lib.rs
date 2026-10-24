@@ -1268,6 +1268,14 @@ mod tests {
         let mut input = Cursor::new(b"");
         assert_eq!(read_core_helper(&mut input).unwrap(), nil!());
     }
+
+    #[test]
+    fn test_call_frame_does_not_shadow_caller_env() {
+        let mut env = create_default_env();
+        eval_str("(define x 1)", &mut env).unwrap();
+        eval_str("(define f (lambda (x) x))", &mut env).unwrap();
+        assert_eq!(eval_str("(+ (f 2) x)", &mut env).unwrap(), number!(3));
+    }
 }
 
 /// eval_str() is the pipeline

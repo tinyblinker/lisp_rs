@@ -18,7 +18,8 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
     // 01 Initialize: clone the current expresstion, take ownership of env
     let mut current_exp = exp.clone();
     let mut current_env = std::mem::take(env);
-    // 02 trampoline loop: each loop processes one expression
+    let mut caller_env: Option<LispEnv> = None; // caller's env
+                                                // 02 trampoline loop: each loop processes one expression
     loop {
         match &current_exp {
             // -- Self-evaluating type: return directly --
@@ -29,19 +30,19 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
             | LispExp::String(_)
             | LispExp::Macro(_)
             | LispExp::Lambda(_) => {
-                *env = current_env; // return the original environment
+                *env = caller_env.take().unwrap_or(current_env); // return the original environment
                 return Ok(current_exp.clone());
             }
             // -- Symbols: look up environment --
             LispExp::Symbol(x) => {
                 let res = current_env.get(*x);
-                *env = current_env; // return the original environment
+                *env = caller_env.take().unwrap_or(current_env); // return the original environment
                 return res;
             }
             // -- Lists --
             LispExp::List(elements) => {
                 if elements.is_empty() {
-                    *env = current_env; // return the original environment
+                    *env = caller_env.take().unwrap_or(current_env); // return the original environment
                     return Ok(LispExp::Nil);
                 }
                 // -- "if" (tail position optimization) --
@@ -74,10 +75,10 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             current_env = LispEnv::with_outer(share_env.clone());
                             // replace placeholder with real value
                             share_env.borrow_mut().set(name.clone(), value);
-                            *env = current_env; // return the original environment
+                            *env = caller_env.take().unwrap_or(current_env); // return the original environment
                             return Ok(LispExp::Nil);
                         } else {
-                            *env = current_env; // return the original environment
+                            *env = caller_env.take().unwrap_or(current_env); // return the original environment
                             return Err(LispErr::Reason(
                                 "eval(): define needs a \'Symbol\'".to_string(),
                             ));
@@ -103,7 +104,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             env: Rc::new(RefCell::new(current_env.clone())),
                             rest: my_rest_params,
                         }));
-                        *env = current_env;
+                        *env = caller_env.take().unwrap_or(current_env);
                         return Ok(lambda);
                     }
                     // -- defmacro --
@@ -136,14 +137,14 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             }
                         };
                         current_env.set(macro_name, my_macro);
-                        *env = current_env;
+                        *env = caller_env.take().unwrap_or(current_env);
                         return Ok(LispExp::Nil);
                     }
                     // -- begin --
                     else if *s == predefined().begin {
                         let args = &elements[1..];
                         if args.is_empty() {
-                            *env = current_env;
+                            *env = caller_env.take().unwrap_or(current_env);
                             return Ok(LispExp::Nil);
                         }
                         // eval all but last(for side effects)
@@ -158,13 +159,13 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     else if *s == predefined().set_bang {
                         let args = &elements[1..];
                         if args.len() != 2 {
-                            *env = current_env;
+                            *env = caller_env.take().unwrap_or(current_env);
                             return Err(LispErr::Reason("\'set!\' needs 2 arguments".into()));
                         }
                         if let LispExp::Symbol(name) = &args[0] {
                             let value = eval(&args[1], &mut current_env)?;
                             current_env.set_upward(*name, value)?;
-                            *env = current_env;
+                            *env = caller_env.take().unwrap_or(current_env);
                             return Ok(LispExp::Nil);
                         }
                     }
@@ -225,7 +226,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                                 };
                                 if passed {
                                     if body.is_empty() {
-                                        *env = current_env;
+                                        *env = caller_env.take().unwrap_or(current_env);
                                         return Ok(LispExp::Nil);
                                     }
                                     // TCO: execute body
@@ -246,20 +247,20 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             current_exp = expr;
                             continue;
                         }
-                        *env = current_env;
+                        *env = caller_env.take().unwrap_or(current_env);
                         return Ok(LispExp::Nil);
                     }
                     // -- and --
                     else if *s == predefined().and_sym {
                         let args = &elements[1..];
                         if args.is_empty() {
-                            *env = current_env;
+                            *env = caller_env.take().unwrap_or(current_env);
                             return Ok(LispExp::Bool(true));
                         }
                         for args in &args[..args.len() - 1] {
                             let val = eval(args, &mut current_env)?;
                             if matches!(val, LispExp::Bool(false) | LispExp::Nil) {
-                                *env = current_env;
+                                *env = caller_env.take().unwrap_or(current_env);
                                 return Ok(val);
                             }
                         }
@@ -270,13 +271,13 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     else if *s == predefined().or_sym {
                         let args = &elements[1..];
                         if args.is_empty() {
-                            *env = current_env;
+                            *env = caller_env.take().unwrap_or(current_env);
                             return Ok(LispExp::Bool(false));
                         }
                         for arg in &args[..args.len() - 1] {
                             let val = eval(arg, &mut current_env)?;
                             if !matches!(val, LispExp::Nil | LispExp::Bool(false)) {
-                                *env = current_env;
+                                *env = caller_env.take().unwrap_or(current_env);
                                 return Ok(val);
                             }
                         }
@@ -333,7 +334,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     // -- quote --
                     else if *s == predefined().quote_sym {
                         let args = &elements[1..];
-                        *env = current_env;
+                        *env = caller_env.take().unwrap_or(current_env);
                         return Ok(args[0].clone());
                     }
                     // -- letrec --
@@ -377,7 +378,12 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                                     .collect(),
                             )
                         };
-                        current_env = LispEnv::with_outer(shared_env);
+                        // TCO + Avoid leak callframe
+                        let old_env =
+                            std::mem::replace(&mut current_env, LispEnv::with_outer(shared_env));
+                        if caller_env.is_none() {
+                            caller_env = Some(old_env);
+                        }
                         current_exp = body;
                         continue;
                     } else if *s == predefined().quasiquote {
@@ -417,7 +423,7 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                     .collect();
                 match func {
                     LispExp::Func(f) => {
-                        *env = current_env;
+                        *env = caller_env.take().unwrap_or(current_env);
                         return f(&(args?));
                     }
                     LispExp::Lambda(lambda) => {
@@ -431,13 +437,16 @@ pub fn eval(exp: &LispExp, env: &mut LispEnv) -> Result<LispExp, LispErr> {
                             let extra = (args.clone()?)[lambda.params.len()..].to_vec();
                             new_env.set(rest_id, LispExp::List(extra));
                         }
-                        // TCO! Update expression and environment, continue
+                        // TCO! + Avoid global callframe leak
+                        let old_env = std::mem::replace(&mut current_env, new_env);
+                        if caller_env.is_none() {
+                            caller_env = Some(old_env);
+                        }
                         current_exp = lambda.body.as_ref().clone();
-                        current_env = new_env;
                         continue;
                     }
                     not_a_function => {
-                        *env = current_env;
+                        *env = caller_env.take().unwrap_or(current_env);
                         match not_a_function {
                             LispExp::Symbol(s) => {
                                 return Err(LispErr::Reason(format!(

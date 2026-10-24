@@ -91,7 +91,6 @@ fn eval_input(input: &str, env: &mut LispEnv) -> Result<String, String> {
     }
 }
 fn main() {
-    // [TODO] write a benchmark to bench the interpreter
     println!("==Heart!Heart!Meow!==");
     println!("<Lisp-rs REPL v0.0.1>");
     println!("Type :help for help, :q to quit, Ctrl+D to exit\n");
