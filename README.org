@@ -1,10 +1,13 @@
-* 总结
-- 介绍
-  很早之前就听闻lisp的鼎鼎大名,刚好又遇到一个合适的教程,于是便跟着教程[[https://github.com/lisering/lisp-rs][lisp_rs教程]]做了一下,今天终于完成了;
-  教程很好,里面故意挖了很多的坑,反而让我受益匪浅;同时教程强调动手去做,以及鼓励自己去写出符合tests的不一样
-  的代码,十分具有学习价值;  
-- 语法
-  参见内部Tests(tests as documents)
+* Conclusion
+- Intro
+  Heard long before that lisp's big names, just meet a suitable tutorial again, then follow the tutorial [[https://github.com/lisering/lisp-rs][lisering/lisp_rs]] made a, finally finished today;
+  Tutorials are very good, which deliberately dug a lot of holes, but let me benefit a lot; The emphasis is on getting things done and encouraging yourself to write variations that conform to tests
+  Code, is very valuable to learn;
+- Syntax
+  Ref: tests as documents
+  #+begin_src bash
+    cargo test --release
+  #+end_src
 - RPEL
   #+begin_src bash
     cargo run --release
