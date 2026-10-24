@@ -1,0 +1,237 @@
+* 总结
+- 介绍
+  很早之前就听闻lisp的鼎鼎大名,刚好又遇到一个合适的教程,于是便跟着教程[[https://github.com/lisering/lisp-rs][lisp_rs教程]]做了一下,今天终于完成了;
+  教程很好,里面故意挖了很多的坑,反而让我受益匪浅;同时教程强调动手去做,以及鼓励自己去写出符合tests的不一样
+  的代码,十分具有学习价值;  
+- 语法
+  参见内部Tests(tests as documents)
+- RPEL
+  #+begin_src bash
+    cargo run --release
+    :help
+  #+end_src
+* Examples
+- in RPEL
+  #+begin_src scheme
+    ; ============================================================
+    ;  Lisp-rs feature tour. Paste it all into the REPL.
+    ; ============================================================
+
+    ; ---------- 1. atoms and literals ----------
+    42
+    -7
+    3.14
+    #t
+    #f
+    nil
+    "hello, lisp"
+    "quote inside: \"ok\""
+    'foo
+    '(1 2 3)
+    '(1 (2 3) "four" #t nil)
+
+    ; ---------- 2. math, comparison, strings ----------
+    (+ 1 2 3 4)
+    (- 10 3 2)
+    (- 5)
+    (* 2 3 4)
+    (/ 100 5 2)
+    (/ 4)
+    (square 9)
+    (= 2 2)
+    (> 3 2)
+    (>= 3 3)
+    (< 2 3)
+    (<= 3 3)
+    (not #f)
+    (not 0)
+    (string-length "hello")
+
+    ; ---------- 3. define, set!, begin ----------
+    (define x 10)
+    (define y 32)
+    x
+    (+ x y)
+    (set! x 99)
+    x
+    (begin
+      (display 'begin-demo)
+      (newline)
+      'begin-done)
+    (begin)
+
+    ; ---------- 4. if, and, or, cond ----------
+    (if (> x 50) 'big 'small)
+    (if #f 1 2)
+    (if 0 'truthy 'falsey)
+    (if nil 'truthy 'falsey)
+    (if '() 'truthy 'falsey)
+    (and #t 1 2)
+    (and #t #f 2)
+    (and)
+    (or #f nil 7)
+    (or #f #f)
+    (or)
+    (cond
+      ((< x 0) 'negative)
+      ((= x 0) 'zero)
+      (else 'positive))
+    (cond ((> x 1000) 'never))
+    (cond
+      ((= x 99)
+       (display 'cond-multi-body)
+       (newline)
+       'matched))
+
+    ; ---------- 5. lambda, closures, extra args, recursion, tail calls ----------
+    (define add (lambda (a b) (+ a b)))
+    (add 3 4)
+    (add 10 20)
+    ((lambda (a b) (+ a b)) 10 20)
+    ((lambda (a b) (+ a b)) 1 2)
+
+    ; make a closure with a top-level let
+    (define add5 (let ((n 5)) (lambda (m) (+ m n))))
+    (define closure-a (add5 37))
+    (define closure-b (add5 40))
+    (list closure-a closure-b)
+
+    ; a closure can keep state. set! changes that state.
+    (define counter
+      (let ((n 0))
+        (lambda ()
+          (begin
+            (set! n (+ n 1))
+            n))))
+    (define c1 (counter))
+    (define c2 (counter))
+    (define c3 (counter))
+    (list c1 c2 c3)
+
+    ; functions can take a function or return a function
+    (define compose (lambda (f g) (lambda (z) (f (g z)))))
+    (define inc (lambda (z) (+ z 1)))
+    (define double (lambda (z) (* z 2)))
+    (define composed ((compose inc double) 20))
+    composed
+    (define twice-fn (lambda (f x) (f (f x))))
+    (define twice-result (twice-fn inc 5))
+    twice-result
+
+    ; a lambda can take extra arguments
+    (define sum-rest (lambda (a . rest) (+ a (apply + rest))))
+    (sum-rest 1 2 3 4)
+
+    ; normal recursion
+    (define fact (lambda (n) (if (= n 0) 1 (* n (fact (- n 1))))))
+    (fact 5)
+    (define sum-to (lambda (n) (if (= n 1) 1 (+ n (sum-to (- n 1))))))
+    (sum-to 10)
+
+    ; tail recursion: 10000 calls are safe
+    (define count-down (lambda (n) (if (= n 0) 'done (count-down (- n 1)))))
+    (count-down 10000)
+
+    ; ---------- 6. let, let*, letrec ----------
+    (let ((a 2) (b 3)) (+ a b))
+    (let () 42)
+    (let ((a 1) (b 2))
+      (display 'let-multi-body)
+      (newline)
+      (* a b))
+    (let ((a 10))
+      (let ((a 1) (b a)) b))
+    (let* ((a 1) (b (+ a 1)) (c (+ b 1))) c)
+    (letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1)))))
+             (odd?  (lambda (n) (if (= n 0) #f (even? (- n 1))))))
+      (even? 10))
+
+    ; ---------- 7. quote, quasiquote, macros ----------
+    (quote foo)
+    'foo
+    (quote (a b))
+    `42
+    (define who "lisp")
+    (define xs (list 1 2 3))
+    `(hello ,who ,@xs (tail))
+    (defmacro when (condition . body)
+      `(if ,condition (begin ,@body) nil))
+    (when #t
+      (display 'when-macro)
+      (newline)
+      42)
+    (when #f (display 'never-printed))
+    (defmacro unless (condition . body)
+      `(if ,condition nil (begin ,@body)))
+    (unless #f (display 'unless-macro) (newline) 'ok)
+    (unless #t (display 'never-printed))
+
+    ; gensym stops a macro from capturing a user variable
+    (defmacro swap! (a b)
+      (let ((t (gensym "swap")))
+        `(let ((,t ,a))
+           (set! ,a ,b)
+           (set! ,b ,t))))
+    (define u 1)
+    (define v 2)
+    (define t 999)
+    (swap! u v)
+    (list u v t)
+    (gensym)
+    (gensym "tmp")
+
+    ; ---------- 8. lists and functions that take functions ----------
+    (list 1 2 3)
+    (cons 0 (list 1 2 3))
+    (cons 'only nil)
+    (car (list 1 2 3))
+    (cdr (list 1 2 3))
+    (cadr (list 1 2 3))
+    (caddr (list 1 2 3))
+    (append (list 1 2) (list 3 4))
+    (append nil (list 1))
+    (length (list 1 2 3))
+    (length nil)
+    (reverse (list 1 2 3))
+    (reverse nil)
+    (member 2 (list 1 2 3))
+    (member 9 (list 1 2 3))
+    (map square (list 1 2 3 4))
+    (map (lambda (n) (* n 10)) (list 1 2 3))
+    (filter (lambda (n) (> n 0)) (list -3 -1 0 2 5))
+    (apply + (list 1 2 3 4))
+    (apply (lambda (a b) (+ a b)) (list 10 20))
+
+    ; ---------- 9. type checks ----------
+    (null? nil)
+    (null? (list))
+    (null? 0)
+    (number? 42)
+    (symbol? 'foo)
+    (boolean? #f)
+    (string? "hi")
+    (procedure? add)
+    (procedure? +)
+    (pair? (list 1))
+    (pair? nil)
+    (list? nil)
+    (list? (list 1 2))
+    (eq? 'a 'a)
+    (equal? (list 1 (list 2 3)) (list 1 (list 2 3)))
+
+    ; ---------- 10. output ----------
+    (begin
+      (display 'display-demo)
+      (display '->)
+      (display (list 1 2 'three "four" #t nil))
+      (newline)
+      (display 'all-features-done)
+      (newline)
+      'ok)
+
+    ; ---------- 11. optional: error and input ----------
+    ; the next two lines are comments by default
+    ; remove the leading semicolon to test error and read
+    ; (error "intentional error")
+    ; (read)
+  #+end_src
