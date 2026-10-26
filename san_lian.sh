@@ -1,5 +1,6 @@
 #!/bin/env bash
 cd ./src
+mkdir -p /tmp/opencode
 base64 -d <<'B64' | gzip -d > /tmp/opencode/sanlian_def.lisp
 H4sIAAAAAAACA7VWy07CQBTd+xWzY5rwEX6KRaohASS6EHcgyCMsXJsmdmiJuGRheEQD/zJx4Wcw
 d0prO73DFMHmLEh75s45954ppWXnqmZf3t6Q7+XwZ/NKqHVGyAUtOdeVuvglruI5rdkNQqt2rVS2
